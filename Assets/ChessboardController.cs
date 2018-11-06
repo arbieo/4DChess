@@ -6,18 +6,20 @@ public class ChessboardController : MonoBehaviour {
 
 	public const int BOARD_SIZE = 4;
 
-	public GameObject[,,,] chessboard = new GameObject[BOARD_SIZE,BOARD_SIZE,BOARD_SIZE,BOARD_SIZE];
+	public Tile[,,,] chessboard = new Tile[BOARD_SIZE,BOARD_SIZE,BOARD_SIZE,BOARD_SIZE];
 	public ChessPiece[,,,] pieces = new ChessPiece[BOARD_SIZE,BOARD_SIZE,BOARD_SIZE,BOARD_SIZE];
+
+	public static ChessboardController instance;
 
 	public int cardinalityX = 0;
 	public int cardinalityY = 1;
 	public int cardinalityZ = 2;
 	public int cardinalityW = 3;
 	
-	public int oldCardinalityX = 0;
-	public int oldCardinalityY = 1;
-	public int oldCardinalityZ = 2;
-	public int oldCardinalityW = 3;
+	int oldCardinalityX = 0;
+	int oldCardinalityY = 1;
+	int oldCardinalityZ = 2;
+	int oldCardinalityW = 3;
 
 	float shiftStartTime = -100;
 	public float timeToShift = 2;
@@ -69,55 +71,34 @@ public class ChessboardController : MonoBehaviour {
 	
 	public GameObject tilePrefab;
 
-	public Material outerBlackMaterial;
-	public Material innerBlackMaterial;
-	public Material outerWhiteMaterial;
-	public Material innerWhiteMaterial;
+	Dictionary<ChessPiece.Type, GameObject> piecePrefabs = new Dictionary<ChessPiece.Type, GameObject>();
 
-	public Material outerDarkMidMaterial;
-	public Material innerDarkMidMaterial;
-	public Material outerLightMidMaterial;
-	public Material innerLightMidMaterial;
-
-	public GameObject pawnPrefab;
-	public GameObject rookPrefab;
-	public GameObject bishopPrefab;
-	public GameObject knightPrefab;
-	public GameObject queenPrefab;
-	public GameObject kingPrefab;
-
-	public enum ChessPiece
-	{
-		NONE,
-		PAWN,
-		ROOK,
-		BISHOP,
-		KNIGHT,
-		QUEEN,
-		KING
-	}
-
-	Dictionary<ChessPiece, GameObject> piecePrefabs = new Dictionary<ChessPiece, GameObject>();
-
+	[HideInInspector]
 	public float sensitivityX = 5;
+	[HideInInspector]
 	public float sensitivityY = 5;
+	[HideInInspector]
 	public float minimumX = -360F;
+	[HideInInspector]
 	public float maximumX = 360F;
+	[HideInInspector]
 	public float minimumY = -60F;
+	[HideInInspector]
 	public float maximumY = 60F;
+	[HideInInspector]
 	float rotationX = 0F;
+	[HideInInspector]
 	float rotationY = 0F;
 	Quaternion originalRotation = Quaternion.identity;
 	Vector3 oldMousePosition = Vector2.zero;
 
+	void Awake()
+	{
+		instance = this;
+	}
+
 	// Use this for initialization
 	void Start () {
-		piecePrefabs[ChessPiece.PAWN] = pawnPrefab;
-		piecePrefabs[ChessPiece.ROOK] = rookPrefab;
-		piecePrefabs[ChessPiece.BISHOP] = bishopPrefab;
-		piecePrefabs[ChessPiece.KNIGHT] = knightPrefab;
-		piecePrefabs[ChessPiece.QUEEN] = queenPrefab;
-		piecePrefabs[ChessPiece.KING] = kingPrefab;
 		InitializeBoard();
 
 		EnterMidShift();
@@ -127,60 +108,14 @@ public class ChessboardController : MonoBehaviour {
 		originalRotation = Camera.main.transform.rotation;
 	}
 
+	void AddChessPiece(int x, int y, int z, int w, ChessPiece.Type type, ChessPiece.Team team)
+	{
+		pieces[x, y, z, w] = new ChessPiece(type, team, x, y, z, w);
+		chessboard[x,y,z,w].SetNewPiece(pieces[x, y, z, w]);
+	}
+
 	void InitializeBoard()
 	{
-		pieces[0,0,0,0] = ChessPiece.ROOK;
-		pieces[1,0,0,0] = ChessPiece.KNIGHT;
-		pieces[2,0,0,0] = ChessPiece.KNIGHT;
-		pieces[3,0,0,0] = ChessPiece.ROOK;
-
-		pieces[0,0,1,0] = ChessPiece.PAWN;
-		pieces[3,0,1,0] = ChessPiece.PAWN;
-
-		pieces[0,1,0,0] = ChessPiece.BISHOP;
-		pieces[1,1,0,0] = ChessPiece.KING;
-		pieces[2,1,0,0] = ChessPiece.QUEEN;
-		pieces[3,1,0,0] = ChessPiece.BISHOP;
-
-		pieces[1,1,1,0] = ChessPiece.PAWN;
-		pieces[2,1,1,0] = ChessPiece.PAWN;
-
-		pieces[0,2,0,0] = ChessPiece.BISHOP;
-		pieces[1,2,0,0] = ChessPiece.QUEEN;
-		pieces[2,2,0,0] = ChessPiece.QUEEN;
-		pieces[3,2,0,0] = ChessPiece.BISHOP;
-
-		pieces[1,2,1,0] = ChessPiece.PAWN;
-		pieces[2,2,1,0] = ChessPiece.PAWN;
-
-		pieces[0,3,0,0] = ChessPiece.ROOK;
-		pieces[1,3,0,0] = ChessPiece.KNIGHT;
-		pieces[2,3,0,0] = ChessPiece.KNIGHT;
-		pieces[3,3,0,0] = ChessPiece.ROOK;
-
-		pieces[0,3,1,0] = ChessPiece.PAWN;
-		pieces[3,3,1,0] = ChessPiece.PAWN;
-
-		pieces[0,0,0,1] = ChessPiece.PAWN;
-		pieces[3,0,0,1] = ChessPiece.PAWN;
-
-		pieces[0,1,1,1] = ChessPiece.PAWN;
-		pieces[1,1,1,1] = ChessPiece.PAWN;
-		pieces[2,1,1,1] = ChessPiece.PAWN;
-		pieces[3,1,1,1] = ChessPiece.PAWN;
-		pieces[1,1,0,1] = ChessPiece.PAWN;
-		pieces[2,1,0,1] = ChessPiece.PAWN;
-
-		pieces[0,2,1,1] = ChessPiece.PAWN;
-		pieces[1,2,1,1] = ChessPiece.PAWN;
-		pieces[2,2,1,1] = ChessPiece.PAWN;
-		pieces[3,2,1,1] = ChessPiece.PAWN;
-		pieces[1,2,0,1] = ChessPiece.PAWN;
-		pieces[2,2,0,1] = ChessPiece.PAWN;
-
-		pieces[0,3,0,1] = ChessPiece.PAWN;
-		pieces[3,3,0,1] = ChessPiece.PAWN;
-
 		for(int x = 0; x<BOARD_SIZE; x++)
 		{
 			for(int y = 0; y<BOARD_SIZE; y++)
@@ -189,50 +124,67 @@ public class ChessboardController : MonoBehaviour {
 				{
 					for(int w = 0; w<BOARD_SIZE; w++)
 					{
-						chessboard[x,y,z,w] = GameObject.Instantiate(tilePrefab);
-						Material tileMaterial;
-						bool isDark = false;
-						if ((x+y+z+w) % 2 == 0)
-						{
-							isDark = true;
-						}
-
-						if (w == 0 || w == 3)
-						{
-							if (x == 0 || x == 3 || z == 0 || z == 3)
-							{
-								tileMaterial = isDark ? outerBlackMaterial : outerWhiteMaterial;
-							}
-							else
-							{
-								tileMaterial = isDark ? innerBlackMaterial : innerWhiteMaterial;
-							}
-						}
-						else
-						{
-							if (x == 0 || x == 3 || z == 0 || z == 3)
-							{
-								tileMaterial = isDark ? outerDarkMidMaterial : outerLightMidMaterial;
-							}
-							else
-							{
-								tileMaterial = isDark ? innerDarkMidMaterial : innerLightMidMaterial;
-							}
-						}
-
-						chessboard[x,y,z,w].transform.Find("Display").GetComponent<MeshRenderer>().material = tileMaterial;
+						chessboard[x,y,z,w] = GameObject.Instantiate(tilePrefab).GetComponent<Tile>();
+						chessboard[x,y,z,w].Initialize(x, y, z, w);
 
 						chessboard[x,y,z,w].transform.position = GetTilePosition(x,y,z,w);
 						chessboard[x,y,z,w].transform.rotation = Quaternion.LookRotation(Vector3.up);
-						if (pieces[x,y,z,w] != ChessPiece.NONE)
-						{
-							GameObject chessPiece = GameObject.Instantiate(piecePrefabs[pieces[x,y,z,w]], chessboard[x,y,z,w].transform.position, chessboard[x,y,z,w].transform.rotation);
-							chessPiece.transform.SetParent(chessboard[x,y,z,w].transform.Find("PieceContainer"));
-						}
 					}
 				}
 			}
 		}
+
+		AddChessPiece(0,0,0,0,ChessPiece.Type.ROOK, ChessPiece.Team.WHITE);
+		AddChessPiece(1,0,0,0,ChessPiece.Type.KNIGHT, ChessPiece.Team.WHITE);
+		AddChessPiece(2,0,0,0,ChessPiece.Type.KNIGHT, ChessPiece.Team.WHITE);
+		AddChessPiece(3,0,0,0,ChessPiece.Type.ROOK, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,0,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,0,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,1,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
+		AddChessPiece(1,1,0,0,ChessPiece.Type.KING, ChessPiece.Team.WHITE);
+		AddChessPiece(2,1,0,0,ChessPiece.Type.QUEEN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,1,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
+
+		AddChessPiece(1,1,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(2,1,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,2,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
+		AddChessPiece(1,2,0,0,ChessPiece.Type.QUEEN, ChessPiece.Team.WHITE);
+		AddChessPiece(2,2,0,0,ChessPiece.Type.QUEEN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,2,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
+
+		AddChessPiece(1,2,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(2,2,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,3,0,0,ChessPiece.Type.ROOK, ChessPiece.Team.WHITE);
+		AddChessPiece(1,3,0,0,ChessPiece.Type.KNIGHT, ChessPiece.Team.WHITE);
+		AddChessPiece(2,3,0,0,ChessPiece.Type.KNIGHT, ChessPiece.Team.WHITE);
+		AddChessPiece(3,3,0,0,ChessPiece.Type.ROOK, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,3,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,3,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,0,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,0,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(1,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(2,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(1,1,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(2,1,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,2,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(1,2,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(2,2,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,2,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(1,2,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(2,2,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+
+		AddChessPiece(0,3,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
+		AddChessPiece(3,3,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
 	}
 
 	Vector3 GetCardinalityVector(int cardinality)
