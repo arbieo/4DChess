@@ -23,15 +23,29 @@ public class ChessboardController : MonoBehaviour {
 	public float timeToShift = 2;
 	bool shiftXFirst = false;
 
-	public int gapCardinalityDirection = 2;
+	public enum SHIFT_STATE
+	{
+		LEFT,
+		MID,
+		RIGHT,
+		LEFT_ROTATED,
+		MID_ROTATED,
+		RIGHT_ROTATED
+	}
+
+	public SHIFT_STATE shiftState = SHIFT_STATE.MID;
 	public int verticalCardinalityDirection = 1;
 
 	Vector3 gapVector = Vector3.forward * 6;
 	Vector3 oldGapVector = Vector3.forward * 6;
 	Vector3 tileFacing = Vector3.up;
+	Vector3 oldTileFacing = Vector3.up;
 
-	public Vector3 neutralCameraPosition;
-	public Quaternion neutralCameraRotation;
+	Vector3 targetCameraPosition;
+	Quaternion targetCameraRotation;
+	Vector3 oldCameraPosition;
+	Quaternion oldCameraRotation;
+
 
 	public Vector3 rightShiftCameraPosition;
 	public Quaternion rightShiftCameraRotation;
@@ -42,8 +56,14 @@ public class ChessboardController : MonoBehaviour {
 	public Vector3 leftShiftCameraPosition;
 	public Quaternion leftShiftCameraRotation;
 
-	public Vector3 boardRelativeCameraPosition;
-	public Quaternion boardRelativeCameraRotation;
+	public Vector3 rightShiftRotatedCameraPosition;
+	public Quaternion rightShiftRotatedCameraRotation;
+
+	public Vector3 midShiftRotatedCameraPosition;
+	public Quaternion midShiftRotatedCameraRotation;
+
+	public Vector3 leftShiftRotatedCameraPosition;
+	public Quaternion leftShiftRotatedCameraRotation;
 
 	bool isRotated = false;
 	
@@ -100,8 +120,11 @@ public class ChessboardController : MonoBehaviour {
 		piecePrefabs[ChessPiece.KING] = kingPrefab;
 		InitializeBoard();
 
-		Camera.main.transform.position = midShiftCameraPosition;
-		Camera.main.transform.rotation = midShiftCameraRotation;
+		EnterMidShift();
+		Camera.main.transform.position = targetCameraPosition;
+		Camera.main.transform.rotation = targetCameraRotation;
+
+		originalRotation = Camera.main.transform.rotation;
 	}
 
 	void InitializeBoard()
@@ -112,8 +135,6 @@ public class ChessboardController : MonoBehaviour {
 		pieces[3,0,0,0] = ChessPiece.ROOK;
 
 		pieces[0,0,1,0] = ChessPiece.PAWN;
-		pieces[1,0,1,0] = ChessPiece.PAWN;
-		pieces[2,0,1,0] = ChessPiece.PAWN;
 		pieces[3,0,1,0] = ChessPiece.PAWN;
 
 		pieces[0,1,0,0] = ChessPiece.BISHOP;
@@ -121,20 +142,16 @@ public class ChessboardController : MonoBehaviour {
 		pieces[2,1,0,0] = ChessPiece.QUEEN;
 		pieces[3,1,0,0] = ChessPiece.BISHOP;
 
-		pieces[0,1,1,0] = ChessPiece.PAWN;
 		pieces[1,1,1,0] = ChessPiece.PAWN;
 		pieces[2,1,1,0] = ChessPiece.PAWN;
-		pieces[3,1,1,0] = ChessPiece.PAWN;
 
 		pieces[0,2,0,0] = ChessPiece.BISHOP;
 		pieces[1,2,0,0] = ChessPiece.QUEEN;
 		pieces[2,2,0,0] = ChessPiece.QUEEN;
 		pieces[3,2,0,0] = ChessPiece.BISHOP;
 
-		pieces[0,2,1,0] = ChessPiece.PAWN;
 		pieces[1,2,1,0] = ChessPiece.PAWN;
 		pieces[2,2,1,0] = ChessPiece.PAWN;
-		pieces[3,2,1,0] = ChessPiece.PAWN;
 
 		pieces[0,3,0,0] = ChessPiece.ROOK;
 		pieces[1,3,0,0] = ChessPiece.KNIGHT;
@@ -142,38 +159,26 @@ public class ChessboardController : MonoBehaviour {
 		pieces[3,3,0,0] = ChessPiece.ROOK;
 
 		pieces[0,3,1,0] = ChessPiece.PAWN;
-		pieces[1,3,1,0] = ChessPiece.PAWN;
-		pieces[2,3,1,0] = ChessPiece.PAWN;
 		pieces[3,3,1,0] = ChessPiece.PAWN;
 
 		pieces[0,0,0,1] = ChessPiece.PAWN;
-		pieces[1,0,0,1] = ChessPiece.PAWN;
-		pieces[2,0,0,1] = ChessPiece.PAWN;
 		pieces[3,0,0,1] = ChessPiece.PAWN;
 
-		pieces[0,1,0,1] = ChessPiece.PAWN;
-		pieces[1,1,0,1] = ChessPiece.PAWN;
-		pieces[2,1,0,1] = ChessPiece.PAWN;
-		pieces[3,1,0,1] = ChessPiece.PAWN;
-		pieces[1,1,1,1] = ChessPiece.PAWN;
-		pieces[2,1,1,1] = ChessPiece.PAWN;
 		pieces[0,1,1,1] = ChessPiece.PAWN;
 		pieces[1,1,1,1] = ChessPiece.PAWN;
 		pieces[2,1,1,1] = ChessPiece.PAWN;
 		pieces[3,1,1,1] = ChessPiece.PAWN;
+		pieces[1,1,0,1] = ChessPiece.PAWN;
+		pieces[2,1,0,1] = ChessPiece.PAWN;
 
-		pieces[0,2,0,1] = ChessPiece.PAWN;
-		pieces[1,2,0,1] = ChessPiece.PAWN;
-		pieces[2,2,0,1] = ChessPiece.PAWN;
-		pieces[3,2,0,1] = ChessPiece.PAWN;
 		pieces[0,2,1,1] = ChessPiece.PAWN;
 		pieces[1,2,1,1] = ChessPiece.PAWN;
 		pieces[2,2,1,1] = ChessPiece.PAWN;
 		pieces[3,2,1,1] = ChessPiece.PAWN;
+		pieces[1,2,0,1] = ChessPiece.PAWN;
+		pieces[2,2,0,1] = ChessPiece.PAWN;
 
 		pieces[0,3,0,1] = ChessPiece.PAWN;
-		pieces[1,3,0,1] = ChessPiece.PAWN;
-		pieces[2,3,0,1] = ChessPiece.PAWN;
 		pieces[3,3,0,1] = ChessPiece.PAWN;
 
 		for(int x = 0; x<BOARD_SIZE; x++)
@@ -290,40 +295,131 @@ public class ChessboardController : MonoBehaviour {
 		return xComponent * (1.5f - x) + yComponent * (1.5f - y) + zComponent * (1.5f - z) + wComponent * (1.5f - w);
 	}
 
-	void ToggleXGap()
+	void EnterRightShift()
 	{
 		cardinalityX = 3;
 		cardinalityY = 1;
 		cardinalityZ = 2;
 		cardinalityW = 0;
+
+		shiftState = SHIFT_STATE.RIGHT;
 		gapVector = Vector3.forward * 4 + Vector3.right * 6;
+
+		tileFacing = Vector3.up;
+		verticalCardinalityDirection = 1;
+
+		targetCameraPosition = rightShiftCameraPosition;
+		targetCameraRotation = rightShiftCameraRotation;
+
+		isRotated = false;
 	}
 
-	void ToggleZGap()
+	void EnterLeftShift()
 	{
 		cardinalityX = 0;
 		cardinalityY = 1;
 		cardinalityZ = 3;
 		cardinalityW = 2;
+
+		shiftState = SHIFT_STATE.LEFT;
 		gapVector = Vector3.forward * 4 + Vector3.left * 6;
+
+		tileFacing = Vector3.up;
+		verticalCardinalityDirection = 1;
+
+		targetCameraPosition = leftShiftCameraPosition;
+		targetCameraRotation = leftShiftCameraRotation;
+
+		isRotated = false;
 	}
 
-	void ToggleWGap()
+	void EnterMidShift()
 	{
 		cardinalityX = 0;
 		cardinalityY = 1;
 		cardinalityZ = 2;
 		cardinalityW = 3;
+
+		shiftState = SHIFT_STATE.MID;
 		gapVector = Vector3.forward * 6;
+
+		tileFacing = Vector3.up;
+		verticalCardinalityDirection = 1;
+
+		targetCameraPosition = midShiftCameraPosition;
+		targetCameraRotation = midShiftCameraRotation;
+
+		isRotated = false;
 	}
 
-	void CopyOldCardinality()
+	void EnterRightShiftRotated()
+	{
+		cardinalityX = 3;
+		cardinalityY = 1;
+		cardinalityZ = 2;
+		cardinalityW = 0;
+
+		shiftState = SHIFT_STATE.RIGHT_ROTATED;
+		gapVector = Vector3.right * 6;
+
+		tileFacing = Vector3.back;
+		verticalCardinalityDirection = 2;
+
+		targetCameraPosition = rightShiftRotatedCameraPosition;
+		targetCameraRotation = rightShiftRotatedCameraRotation;
+
+		isRotated = true;
+	}
+
+	void EnterLeftShiftRotated()
+	{
+		cardinalityX = 0;
+		cardinalityY = 1;
+		cardinalityZ = 3;
+		cardinalityW = 2;
+
+		shiftState = SHIFT_STATE.LEFT_ROTATED;
+		gapVector = Vector3.left * 6;
+
+		tileFacing = Vector3.forward;
+		verticalCardinalityDirection = 2;
+
+		targetCameraPosition = leftShiftRotatedCameraPosition;
+		targetCameraRotation = leftShiftRotatedCameraRotation;
+
+		isRotated = true;
+	}
+
+	void EnterMidShiftRotated()
+	{
+		cardinalityX = 0;
+		cardinalityY = 1;
+		cardinalityZ = 2;
+		cardinalityW = 3;
+
+		shiftState = SHIFT_STATE.MID_ROTATED;
+		gapVector = Vector3.forward * 6;
+
+		tileFacing = Vector3.right;
+		verticalCardinalityDirection = 0;
+
+		targetCameraPosition = midShiftRotatedCameraPosition;
+		targetCameraRotation = midShiftRotatedCameraRotation;
+
+		isRotated = true;
+	}
+
+	void CopyOldValues()
 	{
 		oldCardinalityX = cardinalityX;
 		oldCardinalityY = cardinalityY;
 		oldCardinalityZ = cardinalityZ;
 		oldCardinalityW = cardinalityW;
 		oldGapVector = gapVector;
+		oldTileFacing = tileFacing;
+
+		oldCameraPosition = targetCameraPosition;
+		oldCameraRotation = targetCameraRotation;
 	}
 	
 	void StartShift()
@@ -347,20 +443,32 @@ public class ChessboardController : MonoBehaviour {
 			return;
 		}
 
-		if (gapCardinalityDirection == 2)
+		if (shiftState == SHIFT_STATE.MID)
 		{
-			CopyOldCardinality();
-			ToggleZGap();
+			CopyOldValues();
+			EnterLeftShift();
 			shiftXFirst = true;
-			gapCardinalityDirection = 1;
 			StartShift();
 		}
-		else if (gapCardinalityDirection == 0)
+		else if (shiftState == SHIFT_STATE.RIGHT)
 		{
-			CopyOldCardinality();
-			ToggleWGap();
+			CopyOldValues();
+			EnterMidShift();
 			shiftXFirst = false;
-			gapCardinalityDirection = 2;
+			StartShift();
+		}
+		else if (shiftState == SHIFT_STATE.RIGHT_ROTATED)
+		{
+			CopyOldValues();
+			EnterMidShiftRotated();
+			shiftXFirst = false;
+			StartShift();
+		}
+		else if (shiftState == SHIFT_STATE.MID_ROTATED)
+		{
+			CopyOldValues();
+			EnterLeftShiftRotated();
+			shiftXFirst = true;
 			StartShift();
 		}
 	}
@@ -372,27 +480,70 @@ public class ChessboardController : MonoBehaviour {
 			return;
 		}
 
-		if (gapCardinalityDirection == 1)
+		if (shiftState == SHIFT_STATE.LEFT)
 		{
-			CopyOldCardinality();
-			ToggleWGap();
+			CopyOldValues();
+			EnterMidShift();
 			shiftXFirst = false;
-			gapCardinalityDirection = 2;
 			StartShift();
 		}
-		else if (gapCardinalityDirection == 2)
+		else if (shiftState == SHIFT_STATE.MID)
 		{
-			CopyOldCardinality();
-			ToggleXGap();
+			CopyOldValues();
+			EnterRightShift();
 			shiftXFirst = true;
-			gapCardinalityDirection = 0;
+			StartShift();
+		}
+		else if (shiftState == SHIFT_STATE.LEFT_ROTATED)
+		{
+			CopyOldValues();
+			EnterMidShiftRotated();
+			shiftXFirst = false;
+			StartShift();
+		}
+		else if (shiftState == SHIFT_STATE.MID_ROTATED)
+		{
+			CopyOldValues();
+			EnterRightShiftRotated();
+			shiftXFirst = true;
 			StartShift();
 		}
 	}
 
 	void ToggleRotate()
 	{
-		isRotated = !isRotated;
+		if (Time.time - shiftStartTime < timeToShift)
+		{
+			return;
+		}
+
+		CopyOldValues();
+		if (shiftState == SHIFT_STATE.LEFT)
+		{
+			EnterLeftShiftRotated();
+		}
+		else if (shiftState == SHIFT_STATE.MID)
+		{
+			EnterMidShiftRotated();
+		}
+		else if (shiftState == SHIFT_STATE.RIGHT)
+		{
+			EnterRightShiftRotated();
+		}
+		else if (shiftState == SHIFT_STATE.LEFT_ROTATED)
+		{
+			EnterLeftShift();
+		}
+		else if (shiftState == SHIFT_STATE.MID_ROTATED)
+		{
+			EnterMidShift();
+		}
+		else if (shiftState == SHIFT_STATE.RIGHT_ROTATED)
+		{
+			EnterRightShift();
+		}
+		shiftXFirst = true;
+		StartShift();
 	}
 
 	void OnGUI()
@@ -417,52 +568,50 @@ public class ChessboardController : MonoBehaviour {
 			TryShiftRight();
 		}
 
-		float xAxisValue = Input.GetAxis("Horizontal");
-		float zAxisValue = Input.GetAxis("Vertical");
-		if(Camera.main != null)
+		if (Input.GetKey(KeyCode.LeftArrow))
 		{
-			Camera.main.transform.Translate(new Vector3(xAxisValue, 0.0f, zAxisValue));
-			if (Input.GetKey(KeyCode.Mouse0))
+			TryShiftLeft();
+		} 
+		else if (Input.GetKey(KeyCode.RightArrow))
+		{
+			TryShiftRight();
+		} 
+		else if (isRotated && Input.GetKey(KeyCode.DownArrow))
+		{
+			ToggleRotate();
+		} 
+		else if (!isRotated && Input.GetKey(KeyCode.UpArrow))
+		{
+			ToggleRotate();
+		} 
+
+		if (Time.time - shiftStartTime > timeToShift)
+		{
+			float xAxisValue = Input.GetAxis("Horizontal")*0.5f;
+			float yAxisValue = Input.GetAxis("Vertical")*0.25f;
+			float zAxisValue = Input.GetAxis("Mouse ScrollWheel")*2;
+			if(Camera.main != null)
 			{
-				// Read the mouse input axis
-				rotationX += (Input.mousePosition - oldMousePosition).x * sensitivityX;
-				rotationY += (Input.mousePosition - oldMousePosition).y * sensitivityY;
-				rotationX = ClampAngle (rotationX, minimumX, maximumX);
-				rotationY = ClampAngle (rotationY, minimumY, maximumY);
-				Quaternion xQuaternion = Quaternion.AngleAxis (rotationX, Vector3.up);
-				Quaternion yQuaternion = Quaternion.AngleAxis (rotationY, -Vector3.right);
-				Camera.main.transform.localRotation = originalRotation * xQuaternion * yQuaternion;
+				Camera.main.transform.Translate(new Vector3(xAxisValue, yAxisValue, zAxisValue));
+				/*if (Input.GetKey(KeyCode.Mouse0))
+				{
+					// Read the mouse input axis
+					rotationX += (Input.mousePosition - oldMousePosition).x * sensitivityX;
+					rotationY += (Input.mousePosition - oldMousePosition).y * sensitivityY;
+					rotationX = ClampAngle (rotationX, minimumX, maximumX);
+					rotationY = ClampAngle (rotationY, minimumY, maximumY);
+					Quaternion xQuaternion = Quaternion.AngleAxis (rotationX, Vector3.up);
+					Quaternion yQuaternion = Quaternion.AngleAxis (rotationY, -Vector3.right);
+					Camera.main.transform.localRotation = originalRotation * xQuaternion * yQuaternion;
+				}*/
 			}
 		}
 			
 		oldMousePosition = Input.mousePosition;
 
-		Vector3 cameraPosition = Camera.main.transform.position;
-		Debug.Log(cameraPosition);
-		Quaternion cameraRotation = Camera.main.transform.rotation;
-		Debug.Log(cameraRotation.x + " : " + cameraRotation.y + " : " + cameraRotation.z + " : " + cameraRotation.w);
-
 		if (Input.GetKeyDown(KeyCode.Mouse1))
 		{
 			ToggleRotate();
-		}
-
-		if (isRotated)
-		{
-			if (gapCardinalityDirection == 2)
-			{
-				tileFacing = Vector3.left;
-				verticalCardinalityDirection = 0;
-			}
-			else {
-				tileFacing = Vector3.forward;
-				verticalCardinalityDirection = 2;
-			}
-		}
-		else
-		{
-			tileFacing = Vector3.up;
-			verticalCardinalityDirection = 1;
 		}
 
 		if (Time.time - shiftStartTime < timeToShift)
@@ -490,12 +639,15 @@ public class ChessboardController : MonoBehaviour {
 							else newZ = Mathf.Lerp(newVector.z, oldVector.z, stage1Lerp);
 							chessboard[x,y,z,w].transform.position = new Vector3(newX, newY, newZ);
 							
-							chessboard[x,y,z,w].transform.rotation = Quaternion.RotateTowards(chessboard[x,y,z,w].transform.rotation, Quaternion.LookRotation(tileFacing), Time.fixedDeltaTime*360);
+							chessboard[x,y,z,w].transform.rotation = Quaternion.Lerp(Quaternion.LookRotation(oldTileFacing), Quaternion.LookRotation(tileFacing), shiftPercentage);
 
 						}
 					}
 				}
 			}
+
+			Camera.main.transform.position = Vector3.Lerp(oldCameraPosition, targetCameraPosition, shiftPercentage);
+			Camera.main.transform.rotation = Quaternion.Lerp(oldCameraRotation, targetCameraRotation, shiftPercentage);
 		}
 		else
 		{
