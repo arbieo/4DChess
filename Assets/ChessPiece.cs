@@ -112,7 +112,7 @@ public class ChessPiece
         return validMoves;
     }
 
-    public HashSet<Vector4> GetValidMoves(bool includeFriendlyAttacks = false)
+    public HashSet<Vector4> GetValidMoves(bool allAttacks = false)
     {
         HashSet<Vector4> validMoves = new HashSet<Vector4>();
 
@@ -126,34 +126,8 @@ public class ChessPiece
             {
                 forward = -1;
             }
-            if (isMovableSquare(x, y, z+forward, w, false) && !isEnemyPiece(x, y, z+forward, w) && !isFriendlyPiece(x, y, z+forward, w)) 
-            {
-                validMoves.Add(new Vector4(x, y, z+forward, w));
-                if (!hasMoved && isMovableSquare(x, y, z+forward*2, w, false) && !isEnemyPiece(x, y, z+forward*2, w) && !isFriendlyPiece(x, y, z+forward*2, w))
-                {
-                    validMoves.Add(new Vector4(x, y, z+forward*2, w));
-                }
-            }
-            if (isMovableSquare(x, y, z, w+forward, false) && !isEnemyPiece(x, y, z, w+forward) && !isFriendlyPiece(x, y, z, w+forward))
-            {
-                validMoves.Add(new Vector4(x, y, z, w+forward));
-                if (!hasMoved && isMovableSquare(x, y, z, w+forward*2, false) && !isEnemyPiece(x, y, z, w+forward) && !isFriendlyPiece(x, y, z, w+forward))
-                {
-                    validMoves.Add(new Vector4(x, y, z, w+forward*2));
-                }
-            } 
 
-            if (isEnemyPiece(x+1, y, z+forward, w)) validMoves.Add(new Vector4(x+1, y, z+forward, w));
-            if (isEnemyPiece(x, y+1, z+forward, w)) validMoves.Add(new Vector4(x, y+1, z+forward, w));
-            if (isEnemyPiece(x-1, y, z+forward, w)) validMoves.Add(new Vector4(x-1, y, z+forward, w));
-            if (isEnemyPiece(x, y-1, z+forward, w)) validMoves.Add(new Vector4(x, y-1, z+forward, w));
-
-            if (isEnemyPiece(x+1, y, z, w+forward)) validMoves.Add(new Vector4(x+1, y, z, w+forward));
-            if (isEnemyPiece(x, y+1, z, w+forward)) validMoves.Add(new Vector4(x, y+1, z, w+forward));
-            if (isEnemyPiece(x-1, y, z, w+forward)) validMoves.Add(new Vector4(x-1, y, z, w+forward));
-            if (isEnemyPiece(x, y-1, z, w+forward)) validMoves.Add(new Vector4(x, y-1, z, w+forward));
-
-            if (includeFriendlyAttacks)
+            if (allAttacks)
             {   
                 if (isInBounds(x+1, y, z+forward, w)) validMoves.Add(new Vector4(x+1, y, z+forward, w));
                 if (isInBounds(x, y+1, z+forward, w)) validMoves.Add(new Vector4(x, y+1, z+forward, w));
@@ -165,24 +139,55 @@ public class ChessPiece
                 if (isInBounds(x-1, y, z, w+forward)) validMoves.Add(new Vector4(x-1, y, z, w+forward));
                 if (isInBounds(x, y-1, z, w+forward)) validMoves.Add(new Vector4(x, y-1, z, w+forward));
             }
+            else
+            {
+                if (isMovableSquare(x, y, z+forward, w, false) && !isEnemyPiece(x, y, z+forward, w) && !isFriendlyPiece(x, y, z+forward, w)) 
+                {
+                    validMoves.Add(new Vector4(x, y, z+forward, w));
+                    if (!hasMoved && isMovableSquare(x, y, z+forward*2, w, false) && !isEnemyPiece(x, y, z+forward*2, w) && !isFriendlyPiece(x, y, z+forward*2, w))
+                    {
+                        //validMoves.Add(new Vector4(x, y, z+forward*2, w));
+                    }
+                }
+                if (isMovableSquare(x, y, z, w+forward, false) && !isEnemyPiece(x, y, z, w+forward) && !isFriendlyPiece(x, y, z, w+forward))
+                {
+                    validMoves.Add(new Vector4(x, y, z, w+forward));
+                    if (!hasMoved && isMovableSquare(x, y, z, w+forward*2, false) && !isEnemyPiece(x, y, z, w+forward) && !isFriendlyPiece(x, y, z, w+forward))
+                    {
+                        //validMoves.Add(new Vector4(x, y, z, w+forward*2));
+                    }
+                } 
+
+                if (isEnemyPiece(x+1, y, z+forward, w)) validMoves.Add(new Vector4(x+1, y, z+forward, w));
+                if (isEnemyPiece(x, y+1, z+forward, w)) validMoves.Add(new Vector4(x, y+1, z+forward, w));
+                if (isEnemyPiece(x-1, y, z+forward, w)) validMoves.Add(new Vector4(x-1, y, z+forward, w));
+                if (isEnemyPiece(x, y-1, z+forward, w)) validMoves.Add(new Vector4(x, y-1, z+forward, w));
+
+                if (isEnemyPiece(x+1, y, z, w+forward)) validMoves.Add(new Vector4(x+1, y, z, w+forward));
+                if (isEnemyPiece(x, y+1, z, w+forward)) validMoves.Add(new Vector4(x, y+1, z, w+forward));
+                if (isEnemyPiece(x-1, y, z, w+forward)) validMoves.Add(new Vector4(x-1, y, z, w+forward));
+                if (isEnemyPiece(x, y-1, z, w+forward)) validMoves.Add(new Vector4(x, y-1, z, w+forward));
+            }
+
+            
         }
         else if (type == Type.KING)
         {
-            validMoves = GetOrthoginals(1, includeFriendlyAttacks);
-            validMoves.UnionWith(GetDiagonals(1, includeFriendlyAttacks));
+            validMoves = GetOrthoginals(1, allAttacks);
+            validMoves.UnionWith(GetDiagonals(1, allAttacks));
         }
         else if (type == Type.QUEEN)
         {
-            validMoves = GetOrthoginals(4, includeFriendlyAttacks);
-            validMoves.UnionWith(GetDiagonals(4, includeFriendlyAttacks));
+            validMoves = GetOrthoginals(4, allAttacks);
+            validMoves.UnionWith(GetDiagonals(4, allAttacks));
         }
         else if (type == Type.ROOK)
         {
-            validMoves = GetOrthoginals(4, includeFriendlyAttacks);
+            validMoves = GetOrthoginals(4, allAttacks);
         }
         else if (type == Type.BISHOP)
         {
-            validMoves = GetDiagonals(4, includeFriendlyAttacks);
+            validMoves = GetDiagonals(4, allAttacks);
         }
         else if (type == Type.KNIGHT)
         {
@@ -201,7 +206,7 @@ public class ChessPiece
                     int newZ = z + (dir1 == 2 ? 1 : 0) - (dir1 == 6 ? 1 : 0) + (dir2 == 2 ? 2 : 0) - (dir2 == 6 ? 2 : 0);
                     int newW = w + (dir1 == 3 ? 1 : 0) - (dir1 == 7 ? 1 : 0) + (dir2 == 3 ? 2 : 0) - (dir2 == 7 ? 2 : 0);
 
-                    if (isMovableSquare(newX, newY, newZ, newW, includeFriendlyAttacks)) 
+                    if (isMovableSquare(newX, newY, newZ, newW, allAttacks)) 
                     {
                         validMoves.Add(new Vector4(newX, newY, newZ, newW));
                     }

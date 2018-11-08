@@ -1,0 +1,96 @@
+zw
+wy
+
+wx
+yx
+
+xz
+yz
+
+---
+
+zw
+
+
+wz
+
+xz
+
+
+x,y = y-ish
+z,w = z-ish
+
+
+z priority: z, w, x, y
+y priority: x, y, z, w
+
+zx - wy
+zy - wx
+zw - xy
+
+wx - zy
+wy - zx
+
+yx - wz
+
+MVP TODO:
+
+Navigation 
+- WASD + look?
+- Flip when flipping.
+- Mobile navigation?
+
+- Chess peices
+- Valid chess moves
+- Move highlighting
+- Focus managef for pieces? To navigate and explore
+- Who can hit this square function
+
+- Game controls and victory
+
+Setup:
+
+[0,0,0,0] = rook
+[1,0,0,0] = knight
+[2,0,0,0] = knight
+[3,0,0,0] = rook
+
+[0,0,1,0] = pawn
+[1,0,1,0] = pawn
+[2,0,1,0] = pawn
+[3,0,1,0] = pawn
+
+[0,1,0,0] = bishop
+[1,1,0,0] = king
+[2,1,0,0] = queen
+[3,1,0,0] = rook
+
+[0,1,1,0] = pawn
+[1,1,1,0] = pawn
+[2,1,1,0] = pawn
+[3,1,1,0] = pawn
+
+
+
+AI process
+my turn
+your turn
+my turn
+we both take until exausted
+
+pawn: 1
+knight: 3
+rook: 5
+bishop: 5
+queen: 10
+king: 0 (loss)
+
+Score algoritm:
+Enemy pieces attacking: +0.15 * unit value (does not apply if exausted)
+Enemy pieces attacking me: -0.15 * unit value (does not apply if exausted)
+Attacking friendly pieces: +0.15 friendly value (except king)
+Enemy attacking enemy pieces: -0.15 enemy value (except king)
+
+Pawn advanced forward: +0.15 * pawn value 
+Unit on sides of board -0.15 * unit value
+Spaces beside king that are attacked: -1 points
