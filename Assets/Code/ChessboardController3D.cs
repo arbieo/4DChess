@@ -4,15 +4,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class ChessboardController : MonoBehaviour {
+public class ChessboardController3D : MonoBehaviour 
+{
+	ChessBoard board;
 
-	public const int BOARD_SIZE = 4;
+	public Tile3D[,,,] tiles;
 
-	public Tile[,,,] chessboard = new Tile[BOARD_SIZE,BOARD_SIZE,BOARD_SIZE,BOARD_SIZE];
-
-	public List<ChessPiece>[,,,] attackers = new List<ChessPiece>[BOARD_SIZE,BOARD_SIZE,BOARD_SIZE,BOARD_SIZE];
-
-	public static ChessboardController instance;
+	ChessboardAttackerHelper attackers;
 
 	public int cardinalityX = 0;
 	public int cardinalityY = 1;
@@ -100,14 +98,10 @@ public class ChessboardController : MonoBehaviour {
 	public GameObject tileContainer;
 
 	ChessPiece.Team currentMove = ChessPiece.Team.WHITE;
-	Tile selectedTile;
-	Tile destinationTile;
-	Tile attackedTile;
+	Tile3D selectedTile;
+	Tile3D destinationTile;
+	Tile3D attackedTile;
 
-	void Awake()
-	{
-		instance = this;
-	}
 
 	// Use this for initialization
 	void Start () {
@@ -122,140 +116,32 @@ public class ChessboardController : MonoBehaviour {
 		StartShift();
 	}
 
-	void AddChessPiece(int x, int y, int z, int w, ChessPiece.Type type, ChessPiece.Team team)
-	{
-		ChessPiece newPiece = new ChessPiece(type, team, x, y, z, w);
-		chessboard[x,y,z,w].SetPiece(newPiece);
-	}
-
-	void ComputeAttackers()
-	{
-		for(int x = 0; x<BOARD_SIZE; x++)
-		{
-			for(int y = 0; y<BOARD_SIZE; y++)
-			{
-				for(int z = 0; z<BOARD_SIZE; z++)
-				{
-					for(int w = 0; w<BOARD_SIZE; w++)
-					{
-						attackers[x,y,z,w] = new List<ChessPiece>();
-					}
-				}
-			}
-		}
-
-		foreach (Tile tile in chessboard)
-		{
-			if (tile.currentPiece != null)
-			{
-				foreach (Vector4 attackedTile in tile.currentPiece.GetValidMoves(true))
-				{
-					attackers[(int)attackedTile.x,(int)attackedTile.y, (int)attackedTile.z, (int)attackedTile.w].Add(tile.currentPiece);
-				}
-			}
-		}
-	}
-
 	void InitializeBoard()
 	{
-		for(int x = 0; x<BOARD_SIZE; x++)
+		board = ChessBoard.ClassicVariantBoard();
+
+		tiles = new Tile3D[board.size.x, board.size.y, board.size.z, board.size.w];
+		for(int x = 0; x<board.size.x; x++)
 		{
-			for(int y = 0; y<BOARD_SIZE; y++)
+			for(int y = 0; y<board.size.y; y++)
 			{
-				for(int z = 0; z<BOARD_SIZE; z++)
+				for(int z = 0; z<board.size.z; z++)
 				{
-					for(int w = 0; w<BOARD_SIZE; w++)
+					for(int w = 0; w<board.size.w; w++)
 					{
-						chessboard[x,y,z,w] = GameObject.Instantiate(tilePrefab).GetComponent<Tile>();
-						chessboard[x,y,z,w].Initialize(x, y, z, w);
-						chessboard[x,y,z,w].transform.parent = tileContainer.transform;
+						tiles[x,y,z,w] = GameObject.Instantiate(tilePrefab).GetComponent<Tile3D>();
+						tiles[x,y,z,w].Initialize(x, y, z, w, board);
+						tiles[x,y,z,w].transform.parent = tileContainer.transform;
 
-						chessboard[x,y,z,w].transform.position = GetTilePosition(x,y,z,w);
-						chessboard[x,y,z,w].transform.rotation = Quaternion.LookRotation(Vector3.up);
-
-						attackers[x,y,z,w] = new List<ChessPiece>();
+						tiles[x,y,z,w].transform.position = GetTilePosition(x,y,z,w);
+						tiles[x,y,z,w].transform.rotation = Quaternion.LookRotation(Vector3.up);
 					}
 				}
 			}
 		}
 
-		/*
-		WHITE TEAM
-		 */
-
-		AddChessPiece(0,0,0,0,ChessPiece.Type.ROOK, ChessPiece.Team.WHITE);
-		AddChessPiece(3,0,0,0,ChessPiece.Type.ROOK, ChessPiece.Team.WHITE);
-
-		AddChessPiece(0,1,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
-		AddChessPiece(1,1,0,0,ChessPiece.Type.KING, ChessPiece.Team.WHITE);
-		AddChessPiece(2,1,0,0,ChessPiece.Type.QUEEN, ChessPiece.Team.WHITE);
-		AddChessPiece(3,1,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
-
-		AddChessPiece(1,1,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(2,1,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-
-		AddChessPiece(0,2,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
-		AddChessPiece(1,2,0,0,ChessPiece.Type.KNIGHT, ChessPiece.Team.WHITE);
-		AddChessPiece(2,2,0,0,ChessPiece.Type.KNIGHT, ChessPiece.Team.WHITE);
-		AddChessPiece(3,2,0,0,ChessPiece.Type.BISHOP, ChessPiece.Team.WHITE);
-
-		AddChessPiece(1,2,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(2,2,1,0,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-
-		AddChessPiece(0,0,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(3,0,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-
-		AddChessPiece(0,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(1,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(2,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(3,1,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(1,1,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(2,1,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-
-		AddChessPiece(0,2,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(3,2,1,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(1,2,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-		AddChessPiece(2,2,0,1,ChessPiece.Type.PAWN, ChessPiece.Team.WHITE);
-
-		/*
-		BLACK TEAM
-		 */
-
-		 AddChessPiece(0,0,3,3,ChessPiece.Type.ROOK, ChessPiece.Team.BLACK);
-		AddChessPiece(3,0,3,3,ChessPiece.Type.ROOK, ChessPiece.Team.BLACK);
-
-		AddChessPiece(0,1,3,3,ChessPiece.Type.BISHOP, ChessPiece.Team.BLACK);
-		AddChessPiece(1,1,3,3,ChessPiece.Type.KING, ChessPiece.Team.BLACK);
-		AddChessPiece(2,1,3,3,ChessPiece.Type.KING, ChessPiece.Team.BLACK);
-		AddChessPiece(3,1,3,3,ChessPiece.Type.BISHOP, ChessPiece.Team.BLACK);
-
-		AddChessPiece(1,1,2,3,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(2,1,2,3,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-
-		AddChessPiece(0,2,3,3,ChessPiece.Type.BISHOP, ChessPiece.Team.BLACK);
-		AddChessPiece(1,2,3,3,ChessPiece.Type.KNIGHT, ChessPiece.Team.BLACK);
-		AddChessPiece(2,2,3,3,ChessPiece.Type.KNIGHT, ChessPiece.Team.BLACK);
-		AddChessPiece(3,2,3,3,ChessPiece.Type.BISHOP, ChessPiece.Team.BLACK);
-
-		AddChessPiece(1,2,2,3,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(2,2,2,3,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-
-		AddChessPiece(0,0,3,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(3,0,3,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-
-		AddChessPiece(0,1,2,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(1,1,2,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(2,1,2,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(3,1,2,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(1,1,3,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(2,1,3,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-
-		AddChessPiece(0,2,2,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(3,2,2,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(1,2,3,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-		AddChessPiece(2,2,3,2,ChessPiece.Type.PAWN, ChessPiece.Team.BLACK);
-
-		ComputeAttackers();
+		attackers = new ChessboardAttackerHelper(board);
+		attackers.ComputeAttackers();
 	}
 
 	Vector3 GetFlatCardinalityVector(int cardinality)
@@ -714,10 +600,8 @@ public class ChessboardController : MonoBehaviour {
 		SceneManager.LoadScene("StartScene");
 	}
 
-	void ExecuteMove(Tile startTile, Tile endTile)
+	void ExecuteMove(Tile3D startTile, Tile3D endTile)
 	{
-		startTile.currentPiece.hasMoved = true;
-
 		if (endTile.currentPiece != null && endTile.currentPiece.type == ChessPiece.Type.KING)
 		{
 			if(currentMove == ChessPiece.Team.WHITE)
@@ -744,25 +628,13 @@ public class ChessboardController : MonoBehaviour {
 			}
 		}
 
-		endTile.SetPiece(startTile.currentPiece);
-		startTile.SetPiece(null);
+		Point4 newPosition = new Point4(endTile.x, endTile.y, endTile.z, endTile.w);
+		board.MovePiece(startTile.currentPiece, newPosition);
 
-		if (endTile.currentPiece.type == ChessPiece.Type.PAWN)
-		{
-			if ((endTile.currentPiece.team == ChessPiece.Team.WHITE 
-				&& endTile.currentPiece.z == BOARD_SIZE-1 && endTile.currentPiece.w == BOARD_SIZE-1)
-				|| (endTile.currentPiece.team == ChessPiece.Team.BLACK 
-				   && endTile.currentPiece.z == 0 && endTile.currentPiece.w == 0))
-			{
-				endTile.currentPiece.type = ChessPiece.Type.QUEEN;
-				endTile.SetPiece(endTile.currentPiece);
-			}
-		}
-
-		ComputeAttackers();
+		attackers.ComputeAttackers();
 	}
 
-	void ClickTile(Tile tile)
+	void ClickTile(Tile3D tile)
 	{
 		warningText.text = "";
 		if (tile == selectedTile)
@@ -785,7 +657,7 @@ public class ChessboardController : MonoBehaviour {
 		else if (selectedTile != null && selectedTile.currentPiece != null && destinationTile == null)
 		{
 			if (selectedTile.currentPiece.team == currentMove &&
-				selectedTile.currentPiece.GetValidMoves().Contains(new Vector4(tile.x, tile.y, tile.z, tile.w)))
+				selectedTile.currentPiece.GetValidMoves().Contains(new Point4(tile.x, tile.y, tile.z, tile.w)))
 			{
 				destinationTile = tile;
 			}
@@ -808,7 +680,7 @@ public class ChessboardController : MonoBehaviour {
 
 	void UpdateTileHighlights()
 	{
-		foreach (Tile boardTile in chessboard)
+		foreach (Tile3D boardTile in tiles)
 		{
 			boardTile.ClearSelection();
 		}
@@ -816,9 +688,9 @@ public class ChessboardController : MonoBehaviour {
 		if (attackedTile != null)
 		{
 			attackedTile.Select();
-			foreach(ChessPiece attacker in attackers[attackedTile.x, attackedTile.y, attackedTile.z, attackedTile.w])
+			foreach(ChessPiece attacker in attackers.attackers[attackedTile.x, attackedTile.y, attackedTile.z, attackedTile.w])
 			{
-				chessboard[attacker.x, attacker.y, attacker.z, attacker.w].Highlight();
+				tiles[attacker.x, attacker.y, attacker.z, attacker.w].Highlight();
 			}
 		}
 		else if (selectedTile != null && destinationTile == null)
@@ -826,10 +698,10 @@ public class ChessboardController : MonoBehaviour {
 			selectedTile.Select();
 			if (selectedTile.currentPiece != null)
 			{
-				HashSet<Vector4> moves = selectedTile.currentPiece.GetValidMoves();
-				foreach (Vector4 move in moves)
+				HashSet<Point4> moves = selectedTile.currentPiece.GetValidMoves();
+				foreach (Point4 move in moves)
 				{
-					chessboard[(int)move.x, (int)move.y, (int)move.z, (int)move.w].Highlight();
+					tiles[move.x, move.y, move.z, move.w].Highlight();
 				}
 			}
 		}
@@ -901,9 +773,9 @@ public class ChessboardController : MonoBehaviour {
 				bool clickedTile = false;
 				while(objectHit != null)
 				{
-					if (objectHit.GetComponent<Tile>() != null)
+					if (objectHit.GetComponent<Tile3D>() != null)
 					{
-						ClickTile(objectHit.GetComponent<Tile>());
+						ClickTile(objectHit.GetComponent<Tile3D>());
 						clickedTile = true;
 						break;
 					}
@@ -925,7 +797,7 @@ public class ChessboardController : MonoBehaviour {
 
 		if (Input.GetKey(KeyCode.Mouse1))
 		{
-			Tile newAttackedTile = attackedTile;
+			Tile3D newAttackedTile = attackedTile;
 			RaycastHit hit;
 			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
@@ -935,9 +807,9 @@ public class ChessboardController : MonoBehaviour {
 				bool clickedTile = false;
 				while(objectHit != null)
 				{
-					if (objectHit.GetComponent<Tile>() != null)
+					if (objectHit.GetComponent<Tile3D>() != null)
 					{
-						newAttackedTile = objectHit.GetComponent<Tile>();
+						newAttackedTile = objectHit.GetComponent<Tile3D>();
 						clickedTile = true;
 						break;
 					}
@@ -1104,13 +976,13 @@ public class ChessboardController : MonoBehaviour {
 			}
 			float stage1Lerp = Mathf.Clamp01(1 - (shiftPercentage-0.5f)*2);
 			float stage2Lerp = Mathf.Clamp01(shiftPercentage*2);
-			for(int x = 0; x<BOARD_SIZE; x++)
+			for(int x = 0; x<board.size.x; x++)
 			{
-				for(int y = 0; y<BOARD_SIZE; y++)
+				for(int y = 0; y<board.size.y; y++)
 				{
-					for(int z = 0; z<BOARD_SIZE; z++)
+					for(int z = 0; z<board.size.z; z++)
 					{
-						for(int w = 0; w<BOARD_SIZE; w++)
+						for(int w = 0; w<board.size.w; w++)
 						{
 							Vector3 newVector = GetTilePosition(x,y,z,w);
 							Vector3 oldVector = GetOldTilePosition(x,y,z,w);
@@ -1131,7 +1003,7 @@ public class ChessboardController : MonoBehaviour {
 								}
 								newX = Mathf.Lerp(oldVector.x, newVector.x, shiftPercentage);
 								newZ = Mathf.Lerp(oldVector.z, newVector.z, shiftPercentage);
-								chessboard[x,y,z,w].transform.position = new Vector3(newX, newY, newZ);
+								tiles[x,y,z,w].transform.position = new Vector3(newX, newY, newZ);
 							}
 							else
 							{
@@ -1140,16 +1012,16 @@ public class ChessboardController : MonoBehaviour {
 								else newX = Mathf.Lerp(newVector.x, oldVector.x, stage1Lerp);
 								if (!shiftXFirst) newZ = Mathf.Lerp(oldVector.z, newVector.z, stage2Lerp);
 								else newZ = Mathf.Lerp(newVector.z, oldVector.z, stage1Lerp);
-								chessboard[x,y,z,w].transform.position = new Vector3(newX, newY, newZ);
+								tiles[x,y,z,w].transform.position = new Vector3(newX, newY, newZ);
 							}
 							
 							if (flat)
 							{
-								chessboard[x,y,z,w].transform.rotation = Quaternion.LookRotation(Vector3.up);
+								tiles[x,y,z,w].transform.rotation = Quaternion.LookRotation(Vector3.up);
 							}
 							else
 							{
-								chessboard[x,y,z,w].transform.rotation = Quaternion.Lerp(Quaternion.LookRotation(oldTileFacing), Quaternion.LookRotation(tileFacing), shiftPercentage);
+								tiles[x,y,z,w].transform.rotation = Quaternion.Lerp(Quaternion.LookRotation(oldTileFacing), Quaternion.LookRotation(tileFacing), shiftPercentage);
 							}
 
 						}
@@ -1166,23 +1038,6 @@ public class ChessboardController : MonoBehaviour {
 			{
 				Camera.main.transform.position = Vector3.Lerp(oldCameraPosition, targetCameraPosition, shiftPercentage);
 				Camera.main.transform.rotation = Quaternion.Lerp(oldCameraRotation, targetCameraRotation, shiftPercentage);
-			}
-		}
-		else
-		{
-			for(int x = 0; x<BOARD_SIZE; x++)
-			{
-				for(int y = 0; y<BOARD_SIZE; y++)
-				{
-					for(int z = 0; z<BOARD_SIZE; z++)
-					{
-						for(int w = 0; w<BOARD_SIZE; w++)
-						{
-							//chessboard[x,y,z,w].transform.position = Vector3.MoveTowards(chessboard[x,y,z,w].transform.position, GetTilePosition(x,y,z,w), Time.fixedDeltaTime*10);
-							//chessboard[x,y,z,w].transform.rotation = Quaternion.RotateTowards(chessboard[x,y,z,w].transform.rotation, Quaternion.LookRotation(tileFacing), Time.fixedDeltaTime*360);
-						}
-					}
-				}
 			}
 		}
 

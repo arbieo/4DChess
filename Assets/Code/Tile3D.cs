@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Tile : MonoBehaviour {
+public class Tile3D : MonoBehaviour {
 
 	[HideInInspector]
 	public int x;
@@ -43,18 +43,23 @@ public class Tile : MonoBehaviour {
 	public GameObject pieceContainer;
 	[HideInInspector]
 	public GameObject currentPieceGameObject;
+	ChessBoard board;
+
 	public ChessPiece currentPiece;
 
 	public bool highlighted;
 	public bool selected;
 
-	public void Initialize(int x, int y, int z, int w)
+	public void Initialize(int x, int y, int z, int w, ChessBoard board)
 	{
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.w = w;
-		UpdateMaterials();
+		this.board = board;
+		currentPiece = board.pieces[x,y,z,w];
+		UpdatePiece();
+		board.RegisterTileUpdateCallback(new Point4(x,y,z,w), UpdatePiece);
 	}
 
 	public void Select()
@@ -146,7 +151,7 @@ public class Tile : MonoBehaviour {
 		}
 	}
 
-	public void SetPiece(ChessPiece piece)
+	public void UpdatePiece()
 	{
 		if (currentPiece != null)
 		{
@@ -156,23 +161,18 @@ public class Tile : MonoBehaviour {
 			currentPiece = null;
 		}
 
-		currentPiece = piece;
-		if (piece != null)
+		currentPiece = board.pieces[x, y, z, w];
+		if (currentPiece != null)
 		{
 			GameObject piecePrefab = pawnPrefab;
-			if (piece.type == ChessPiece.Type.PAWN) piecePrefab = pawnPrefab;
-			if (piece.type == ChessPiece.Type.ROOK) piecePrefab = rookPrefab;
-			if (piece.type == ChessPiece.Type.BISHOP) piecePrefab = bishopPrefab;
-			if (piece.type == ChessPiece.Type.KNIGHT) piecePrefab = knightPrefab;
-			if (piece.type == ChessPiece.Type.QUEEN) piecePrefab = queenPrefab;
-			if (piece.type == ChessPiece.Type.KING) piecePrefab = kingPrefab;
+			if (currentPiece.type == ChessPiece.Type.PAWN) piecePrefab = pawnPrefab;
+			if (currentPiece.type == ChessPiece.Type.ROOK) piecePrefab = rookPrefab;
+			if (currentPiece.type == ChessPiece.Type.BISHOP) piecePrefab = bishopPrefab;
+			if (currentPiece.type == ChessPiece.Type.KNIGHT) piecePrefab = knightPrefab;
+			if (currentPiece.type == ChessPiece.Type.QUEEN) piecePrefab = queenPrefab;
+			if (currentPiece.type == ChessPiece.Type.KING) piecePrefab = kingPrefab;
 			currentPieceGameObject = GameObject.Instantiate(piecePrefab, transform.position, transform.rotation);
 			currentPieceGameObject.transform.SetParent(pieceContainer.transform);
-
-			piece.x = x;
-			piece.y = y;
-			piece.z = z;
-			piece.w = w;
 		}
 		
 		UpdateMaterials();
