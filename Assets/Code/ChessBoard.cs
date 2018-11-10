@@ -11,9 +11,16 @@ public class ChessBoard
 
 	public ChessVariantOptions options;
 
-	public ChessPiece lastMovedPiece;
-	public Point4 lastMovedPieceLocation;
-	public ChessPiece lastMoveCapturedPiece;
+    public struct Move
+    {
+        public Point4 startPosition;
+        public Point4 endPosition;
+		public ChessPiece pieceMoved;
+		public ChessPiece pieceCaptured;
+    }
+	public List<Move> moveHistory = new List<Move>();
+
+	public ChessPiece.Team currentMove = ChessPiece.Team.WHITE;
 
 	Dictionary<Point4, HashSet<TileUpdateCallback>> tileUpdateCallbacks = new Dictionary<Point4, HashSet<TileUpdateCallback>>();
 	HashSet<PromotionRequiredCallback> promotionRequiredCallbacks = new HashSet<PromotionRequiredCallback>();
@@ -30,9 +37,50 @@ public class ChessBoard
 		this.options = options;
 	}
 
+	public ChessBoard DeepCopy()
+	{
+		//Replace with serialization
+		ChessBoard copy = new ChessBoard(size, options);
+
+		copy.moveHistory = new List<Move>(moveHistory);
+		copy.currentMove = currentMove;
+
+		foreach (ChessPiece piece in pieces)
+		{
+			if (piece != null)
+			{
+				ChessPiece newPiece = piece.DeepCopy();
+				newPiece.board = copy;
+				copy.pieces[piece.x, piece.y, piece.z, piece.w] = newPiece;
+			}
+		}
+
+		return copy;
+	}
+
+	public Move GetMove(Point4 start, Point4 end)
+	{
+		Move move = new Move();
+		move.startPosition = start;
+		move.endPosition = end;
+		move.pieceMoved = GetPiece(start);
+		move.pieceCaptured = GetPiece(end);
+		return move;
+	}
+
 	public ChessPiece GetPiece(Point4 position)
 	{
 		return pieces[position.x, position.y, position.z, position.w];
+	}
+
+	public void SetPiece(Point4 position, ChessPiece piece)
+	{
+		pieces[position.x, position.y, position.z, position.w] = piece;
+		if (piece != null)
+		{
+			piece.currentPosition = position;
+		}
+		OnTileUpdate(position);
 	}
 
 	public static ChessBoard ClassicVariantBoard()
@@ -116,42 +164,93 @@ public class ChessBoard
 
 	public void AddChessPiece(int x, int y, int z, int w, ChessPiece.Type type, ChessPiece.Team team)
 	{
-		pieces[x,y,z,w] = new ChessPiece(type, team, x, y, z, w, this);
-		OnTileUpdate(new Point4(x, y, z, w));
+		Point4 position = new Point4(x, y, z, w);
+		SetPiece(position, new ChessPiece(type, team, position, this));
 	}
 
-	public void MovePiece(ChessPiece piece, Point4 newPosition)
+	public void Undo()
 	{
-		ChessPiece capturedPiece = pieces[piece.x, piece.y, piece.z, piece.w];
-		Point4 movedFrom = new Point4(piece.x, piece.y, piece.z, piece.w);
+		Move lastMove = moveHistory[moveHistory.Count -1];
+		SetPiece(lastMove.startPosition, lastMove.pieceMoved);
 
-		pieces[newPosition.x, newPosition.y, newPosition.z, newPosition.w] = piece;
-		OnTileUpdate(newPosition);
-		pieces[piece.x, piece.y, piece.z, piece.w] = null;
-		OnTileUpdate(piece.currentPosition);
-		piece.currentPosition = newPosition;
-
-		if (lastMovedPiece != null && lastMovedPiece.type == ChessPiece.Type.PAWN && 
-			piece.type == ChessPiece.Type.PAWN && lastMovedPieceLocation == lastMovedPiece.startPosition && 
-			(newPosition == lastMovedPiece.currentPosition - lastMovedPiece.forwardW 
-				|| newPosition == lastMovedPiece.currentPosition - lastMovedPiece.forwardZ))
+		//Be explicit because en passant and promotion
+		SetPiece(lastMove.endPosition, null);
+		if (lastMove.pieceCaptured != null)
 		{
-			pieces[lastMovedPiece.x, lastMovedPiece.y, lastMovedPiece.z, lastMovedPiece.w] = null;
-			OnTileUpdate(lastMovedPiece.currentPosition);
+			SetPiece(lastMove.pieceCaptured.currentPosition, lastMove.pieceCaptured);
 		}
+
+		moveHistory.RemoveAt(moveHistory.Count -1);
+
+		if(currentMove == ChessPiece.Team.WHITE)
+		{
+			currentMove = ChessPiece.Team.BLACK;
+		}
+		else
+		{
+			currentMove = ChessPiece.Team.WHITE;
+		}
+	}
+
+	public void MovePiece(Move move)
+	{
+		ChessPiece piece = move.pieceMoved;
+		Point4 newPosition = move.endPosition;
+		ChessPiece capturedPiece = pieces[piece.x, piece.y, piece.z, piece.w];
+		Point4 movedFrom = move.startPosition;
+
+		SetPiece(newPosition, piece);
+		SetPiece(movedFrom, null);
+
+		/*if (moveHistory.Count > 0)
+		{
+			lastMove = moveHistory[moveHistory.Count - 1];
+		}
+
+		if (lastMove != null && lastMove.pieceMoved.type == ChessPiece.Type.PAWN && 
+			piece.type == ChessPiece.Type.PAWN && lastMove.startPosition == lastMove.pieceMoved.startPosition && 
+			(newPosition == lastMove.pieceMoved.currentPosition - lastMove.pieceMoved.forwardW 
+				|| newPosition == lastMove.pieceMoved.currentPosition - lastMove.pieceMoved.forwardZ))
+		{
+			SetPiece(lastMove.pieceMoved.currentPosition, null);
+		}*/
 		
 		if (piece.type == ChessPiece.Type.PAWN)
 		{
 			if ((piece.team == ChessPiece.Team.WHITE && piece.z == size.z - 1 && piece.w == size.w - 1)
 				|| (piece.team == ChessPiece.Team.BLACK && piece.z == 0 && piece.w == 0))
 			{
-				piece.type = ChessPiece.Type.QUEEN;
+				ChessPiece promotedPiece = piece.DeepCopy();
+				promotedPiece.type = ChessPiece.Type.QUEEN;
+				SetPiece(newPosition, promotedPiece);
 			}
 		}
 
-		lastMovedPiece = piece;
-		lastMovedPieceLocation = movedFrom;
-		lastMoveCapturedPiece = capturedPiece;
+		moveHistory.Add(move);
+
+		/*if (capturedPiece.type == ChessPiece.Type.KING)
+		{
+			if(currentMove == ChessPiece.Team.WHITE)
+			{
+				turnText.text = "White wins!!";
+			}
+			else
+			{
+				turnText.text = "Black wins!!";
+			}
+			StartCoroutine(LoadStartScene());
+		}*/
+
+		if(currentMove == ChessPiece.Team.WHITE)
+		{
+			currentMove = ChessPiece.Team.BLACK;
+		}
+		else
+		{
+			currentMove = ChessPiece.Team.WHITE;
+		}
+
+		
 	}
 
 	public void RegisterTileUpdateCallback(Point4 location, TileUpdateCallback callback)

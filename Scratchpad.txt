@@ -1,20 +1,13 @@
-zw
-wy
+zw = right
+wy = leftRotated
 
-wx
-yx
+wx = left
+yx = rightRotated
 
-xz
-yz
+xz = mid
+yz = midRotated
 
 ---
-
-zw
-
-
-wz
-
-xz
 
 
 x,y = y-ish
@@ -79,17 +72,17 @@ my turn
 we both take until exausted
 
 pawn: 1
-knight: 3
-rook: 5
+rook: 3
+knight: 5
 bishop: 5
-queen: 10
+queen: 9
 king: 0 (loss)
 
 Score algoritm:
-Enemy pieces attacking: +0.15 * unit value (does not apply if exausted)
-Enemy pieces attacking me: -0.15 * unit value (does not apply if exausted)
-Attacking friendly pieces: +0.15 friendly value (except king)
-Enemy attacking enemy pieces: -0.15 enemy value (except king)
+Friendly attacking enemy: +0.15 * unit value (except king)
+Friendly attacking friendly: +0.15 friendly value (except king)
+
+Friendly attacking king: +10
 
 Pawn advanced forward: +0.15 * pawn value 
 Unit on sides of board -0.15 * unit value

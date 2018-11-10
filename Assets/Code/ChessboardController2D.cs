@@ -34,23 +34,23 @@ public class ChessboardController2D : MonoBehaviour {
 	{
 		InitializeBoard(board);
 
-		xText.text = GetVerticalCardinalityText(cardinalityX);
-		yText.text = GetVerticalCardinalityText(cardinalityY);
-		zText.text = GetHorizontalCardinalityText(cardinalityZ);
-		wText.text = GetHorizontalCardinalityText(cardinalityW);
+		xText.text = GetHorizontalCardinalityText(cardinalityX);
+		yText.text = GetHorizontalCardinalityText(cardinalityY);
+		zText.text = GetVerticalCardinalityText(cardinalityZ);
+		wText.text = GetVerticalCardinalityText(cardinalityW);
 	}
 
 	string GetHorizontalCardinalityText(int cardinality)
 	{
 		switch(cardinality)
 		{
-			case 2:
-				return "RIGHT  -->";
-			case 3:
-				return "3D  -->";
 			case 0:
-				return "FORWARD  -->";
+				return "RIGHT  -->";
 			case 1:
+				return "3D  -->";
+			case 2:
+				return "FORWARD  -->";
+			case 3:
 				return "4D  -->";
 		}
 		return "";
@@ -60,13 +60,13 @@ public class ChessboardController2D : MonoBehaviour {
 	{
 		switch(cardinality)
 		{
-			case 2:
-				return "R\nI\nG\nH\nT\n \n|\n|\nV";
-			case 3:
-				return "3\nD \n|\n|\nV";
 			case 0:
-				return "F\nO\nR\nW\nA\nR\nD\n \n|\n|\nV";
+				return "R\nI\nG\nH\nT\n \n|\n|\nV";
 			case 1:
+				return "3\nD \n|\n|\nV";
+			case 2:
+				return "F\nO\nR\nW\nA\nR\nD\n \n|\n|\nV";
+			case 3:
 				return "4\nD\n \n|\n|\nV\n";
 		}
 		return "";

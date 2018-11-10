@@ -75,13 +75,18 @@ public class ChessPiece
 
     public ChessBoard board;
 
-    public ChessPiece(Type type, Team team, int x, int y, int z, int w, ChessBoard board)
+    public ChessPiece(Type type, Team team, Point4 position, ChessBoard board)
     {
         this.type = type;
         this.team = team;
-        currentPosition = new Point4(x, y, z, w);
-        startPosition = new Point4(x, y, z, w);
+        currentPosition = position;
+        startPosition = position;
         this.board = board;
+    }
+
+    public ChessPiece DeepCopy()
+    {
+        return (ChessPiece)this.MemberwiseClone();
     }
 
     public bool isMovableSquare(int x, int y, int z, int w, bool includeFriendlyAttacks)
@@ -239,8 +244,9 @@ public class ChessPiece
                     if (isMovableSquare(newX, newY, newZ, newW, allAttacks)) validMoves.Add(new Point4(newX, newY, newZ, newW));
                 }
 
-                for (int dir2 = dir1+1; dir2<8; dir2++)
+                for (int dir2 = 0; dir2<8; dir2++)
                 {
+                    if (dir1 == dir2) continue;
                     if (!board.options.kingCanMoveW && (dir2 == 3 || dir2 == 7)) continue;
                     if (!board.options.kingCanMoveY && (dir2 == 1 || dir2 == 5)) continue;
 
@@ -257,7 +263,6 @@ public class ChessPiece
                     if (isMovableSquare(newX, newY, newZ, newW, allAttacks))  validMoves.Add(new Point4(newX, newY, newZ, newW));
                 }
             }
-            validMoves.UnionWith(GetDiagonals(1, allAttacks));
         }
         else if (type == Type.QUEEN)
         {

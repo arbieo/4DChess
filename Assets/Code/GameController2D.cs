@@ -12,8 +12,8 @@ public class GameController2D : MonoBehaviour {
 	bool shiftXFirst = false;
 	bool shifting = false;
 
-	ChessPiece.Team currentMove = ChessPiece.Team.WHITE;
 	Point4 selectedTile = Point4.NONE;
+	Point4 destinationTile = Point4.NONE;
 	Point4 attackedTile = Point4.NONE;
 
 	ChessboardAttackerHelper attackers;
@@ -75,62 +75,63 @@ public class GameController2D : MonoBehaviour {
 
 		if (selectedTile == Point4.NONE)
 		{
+			//Nothing selected, select
 			selectedTile = tile;
 		}
-		else if (selectedTile != Point4.NONE)
+		else if (selectedTile != Point4.NONE && destinationTile != Point4.NONE)
 		{
-			if (board.GetPiece(selectedTile) != null && board.GetPiece(selectedTile).team == currentMove
-				&& board.GetPiece(selectedTile).GetValidMoves().Contains(tile))
+			//Selected piece and destination
+			if (tile == destinationTile)
 			{
+				//Move piece
 				ExecuteMove(selectedTile, tile);
 
 				selectedTile = Point4.NONE;
+				destinationTile = Point4.NONE;
+			}
+			else
+			{
+				destinationTile = Point4.NONE;
+			}
+		}
+		else if (selectedTile != Point4.NONE)
+		{
+			//Selected piece
+			if (board.GetPiece(selectedTile) == null || board.GetPiece(selectedTile).team != board.currentMove)
+			{
+				selectedTile = tile;
+			}
+			else if (board.GetPiece(selectedTile) != null && board.GetPiece(selectedTile).GetValidMoves().Contains(tile))
+			{
+				destinationTile = tile;
 			}
 			else
 			{
 				selectedTile = tile;
 			}
 		}
+		
 
 		UpdateTileHighlights();
 	}
 
 	void ClickOffTile()
 	{
-		selectedTile = Point4.NONE;
+		if (selectedTile != Point4.NONE && destinationTile == Point4.NONE)
+		{
+			selectedTile = Point4.NONE;
+		}
+		else if (selectedTile != Point4.NONE && destinationTile != Point4.NONE)
+		{
+			destinationTile = Point4.NONE;
+		}
 
 		UpdateTileHighlights();
 	}
 
 	void ExecuteMove(Point4 startTile, Point4 endTile)
 	{
-		if (board.GetPiece(endTile) != null && board.GetPiece(endTile).type == ChessPiece.Type.KING)
-		{
-			/*if(currentMove == ChessPiece.Team.WHITE)
-			{
-				turnText.text = "White wins!!";
-			}
-			else
-			{
-				turnText.text = "Black wins!!";
-			}
-			StartCoroutine(LoadStartScene());*/
-		}
-		else
-		{
-			if(currentMove == ChessPiece.Team.WHITE)
-			{
-				currentMove = ChessPiece.Team.BLACK;
-				//turnText.text = "Black's turn";
-			}
-			else
-			{
-				currentMove = ChessPiece.Team.WHITE;
-				//turnText.text = "White's turn";
-			}
-		}
-
-		board.MovePiece(board.GetPiece(startTile), endTile);
+		board.MovePiece(board.GetMove(startTile, endTile));
 
 		attackers.ComputeAttackers();
 	}
@@ -152,7 +153,7 @@ public class GameController2D : MonoBehaviour {
 					chessboardController.GetTile(attacker.currentPosition).Highlight();
 				}
 			}
-			else if (selectedTile != Point4.NONE)
+			else if (selectedTile != Point4.NONE && destinationTile == Point4.NONE)
 			{
 				chessboardController.GetTile(selectedTile).Select();
 				if (board.GetPiece(selectedTile) != null)
@@ -163,6 +164,11 @@ public class GameController2D : MonoBehaviour {
 						chessboardController.GetTile(move).Highlight();
 					}
 				}
+			}
+			else if (selectedTile != Point4.NONE && destinationTile != Point4.NONE)
+			{
+				chessboardController.GetTile(selectedTile).Select();
+				chessboardController.GetTile(destinationTile).Select();
 			}
 		}
 	}
@@ -361,6 +367,19 @@ public class GameController2D : MonoBehaviour {
 				viewVector = Vector3.up;
 			}
 			StartShift();
+		}
+
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			ChessAI AI = new ChessAI(board);
+			ChessBoard.Move AIMove = AI.DoTurn();
+			board.MovePiece(board.GetMove(AIMove.startPosition, AIMove.endPosition));
+			attackers.ComputeAttackers();
+		}
+
+		if (Input.GetKeyDown(KeyCode.Backspace))
+		{
+			board.Undo();
 		}
 	}
 

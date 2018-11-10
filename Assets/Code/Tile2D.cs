@@ -64,7 +64,7 @@ public class Tile2D : MonoBehaviour {
 
 	public void UpdatePiece()
 	{
-		ChessPiece currentPiece = board.pieces[position.x, position.y, position.z, position.w];
+		ChessPiece currentPiece = board.GetPiece(position);
 		
 		Sprite pieceSprite = null;
 		if (currentPiece != null)

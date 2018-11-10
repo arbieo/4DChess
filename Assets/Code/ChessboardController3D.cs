@@ -97,7 +97,6 @@ public class ChessboardController3D : MonoBehaviour
 	public GameObject tilePrefab;
 	public GameObject tileContainer;
 
-	ChessPiece.Team currentMove = ChessPiece.Team.WHITE;
 	Tile3D selectedTile;
 	Tile3D destinationTile;
 	Tile3D attackedTile;
@@ -604,7 +603,7 @@ public class ChessboardController3D : MonoBehaviour
 	{
 		if (endTile.currentPiece != null && endTile.currentPiece.type == ChessPiece.Type.KING)
 		{
-			if(currentMove == ChessPiece.Team.WHITE)
+			if(board.currentMove == ChessPiece.Team.WHITE)
 			{
 				turnText.text = "White wins!!";
 			}
@@ -614,22 +613,20 @@ public class ChessboardController3D : MonoBehaviour
 			}
 			StartCoroutine(LoadStartScene());
 		}
-		else
-		{
-			if(currentMove == ChessPiece.Team.WHITE)
-			{
-				currentMove = ChessPiece.Team.BLACK;
-				turnText.text = "Black's turn";
-			}
-			else
-			{
-				currentMove = ChessPiece.Team.WHITE;
-				turnText.text = "White's turn";
-			}
-		}
-
+		
+		Point4 startPosition = new Point4(startTile.x, startTile.y, startTile.z, startTile.w);
 		Point4 newPosition = new Point4(endTile.x, endTile.y, endTile.z, endTile.w);
-		board.MovePiece(startTile.currentPiece, newPosition);
+		board.MovePiece(board.GetMove(startPosition, newPosition));
+		
+		
+		if(board.currentMove == ChessPiece.Team.BLACK)
+		{
+			turnText.text = "Black's turn";
+		}
+		else if(board.currentMove == ChessPiece.Team.WHITE)
+		{
+			turnText.text = "White's turn";
+		}
 
 		attackers.ComputeAttackers();
 	}
@@ -656,7 +653,7 @@ public class ChessboardController3D : MonoBehaviour
 		}
 		else if (selectedTile != null && selectedTile.currentPiece != null && destinationTile == null)
 		{
-			if (selectedTile.currentPiece.team == currentMove &&
+			if (selectedTile.currentPiece.team == board.currentMove &&
 				selectedTile.currentPiece.GetValidMoves().Contains(new Point4(tile.x, tile.y, tile.z, tile.w)))
 			{
 				destinationTile = tile;
