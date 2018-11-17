@@ -7,6 +7,6 @@ public class StartSceneController : MonoBehaviour {
 
 	public void StartGame()
 	{
-		SceneManager.LoadScene("Chess");
+		SceneManager.LoadScene("Chess2D");
 	}
 }

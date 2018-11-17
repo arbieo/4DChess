@@ -7,14 +7,15 @@ class ChessAI
     ChessBoard originalBoard;
 
     public const float ADVANCED_PAWN_MULT = 0.15f;
+    public const float ADVANCED_UNIT_MULT = 0.1f;
     public const float ADVANCED_PAWN_MIN = 2;
     public const float BOARD_EDGE_DETRIMENT = 0.05f;
     public const float UNCONNECTED_MULT = 0.1f;
     public const float THREATENED_MULT = 0.25f;
     public const float ATTACK_BALANCE_THREATENED_MULT = 0.5f;
-    public const float KING_CHECKED_SCORE = 2;
+    public const float KING_CHECKED_SCORE = 5;
     public const float OUR_KING_CHECKED_SCORE = 1000;
-    public const float KING_FLIGHT_COVERED_SCORE = 0.5f;
+    public const float KING_FLIGHT_COVERED_SCORE = 2f;
     public const float KING_NO_FLIGHT_SCORE = 5;
 
     ChessboardAttackerHelper attackHelper;
@@ -64,7 +65,6 @@ class ChessAI
 
     public Dictionary<ChessBoard.Move, float> ComputeMoveScores(ChessBoard board, int movesRemaining)
     {
-
         List<ChessBoard.Move> possibleMoves = new List<ChessBoard.Move>();
         foreach (ChessPiece piece in board.pieces)
         {
@@ -202,6 +202,7 @@ class ChessAI
                     // Add/remove score depending on the king position
                     if(piece.team == enemyTeam)
                     {
+                        enemyScore += 1000000;
                         enemyScore -= inCheck ? KING_CHECKED_SCORE : 0;
                         enemyScore -= flightSquaresCovered * KING_FLIGHT_COVERED_SCORE;
                         if (flightSquareCount == 0)
@@ -212,6 +213,7 @@ class ChessAI
 
                     if(piece.team != enemyTeam)
                     {
+                        alliedScore += 1000000;
                         alliedScore -= inCheck ? OUR_KING_CHECKED_SCORE : 0;
                         alliedScore -= flightSquaresCovered * KING_FLIGHT_COVERED_SCORE;
                         if (flightSquareCount == 0)
@@ -284,6 +286,21 @@ class ChessAI
                 pushAmount = (int)Mathf.Max(pushAmount - ADVANCED_PAWN_MIN, 0);
                 teamScore += pushAmount * ADVANCED_PAWN_MULT;
             }
+            else
+            {
+                //Points for pawn push
+                int pushAmount = 0;
+                if (piece.forwardW.w > 0)
+                {
+                    pushAmount += piece.w;
+                }
+                else
+                {
+                    pushAmount += board.size.w - 1 - piece.w;
+                }
+
+                teamScore += pushAmount * ADVANCED_UNIT_MULT;
+            }
 
             //Lower score if on the edge of the board
             if(piece.currentPosition.x == 0 || piece.currentPosition.x == board.size.x-1)
@@ -313,6 +330,6 @@ class ChessAI
             }
         }
         
-        return alliedScore - enemyScore;
+        return alliedScore - enemyScore + Random.Range(-0.1f, 0.1f);
     }
 }

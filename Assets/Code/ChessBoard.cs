@@ -24,9 +24,11 @@ public class ChessBoard
 
 	Dictionary<Point4, HashSet<TileUpdateCallback>> tileUpdateCallbacks = new Dictionary<Point4, HashSet<TileUpdateCallback>>();
 	HashSet<PromotionRequiredCallback> promotionRequiredCallbacks = new HashSet<PromotionRequiredCallback>();
+	HashSet<BoardUpdateCallback> boardUpdateCallbacks = new HashSet<BoardUpdateCallback>();
 
 	public delegate void TileUpdateCallback();
 	public delegate void PromotionRequiredCallback(Point4 location);
+	public delegate void BoardUpdateCallback();
 
 	public ChessBoard(Point4 size, ChessVariantOptions options)
 	{
@@ -190,6 +192,8 @@ public class ChessBoard
 		{
 			currentMove = ChessPiece.Team.WHITE;
 		}
+
+		OnBoardUpdate();
 	}
 
 	public void MovePiece(Move move)
@@ -250,7 +254,7 @@ public class ChessBoard
 			currentMove = ChessPiece.Team.WHITE;
 		}
 
-		
+		OnBoardUpdate();		
 	}
 
 	public void RegisterTileUpdateCallback(Point4 location, TileUpdateCallback callback)
@@ -296,6 +300,24 @@ public class ChessBoard
 		foreach (PromotionRequiredCallback callback in promotionRequiredCallbacks)
 		{
 			callback(location);
+		}
+	}
+
+	public void RegisterBoardUpdateCallback(BoardUpdateCallback callback)
+	{
+		boardUpdateCallbacks.Add(callback);
+	}
+
+	public void RemoveTileUpdateCallback(BoardUpdateCallback callback)
+	{
+		boardUpdateCallbacks.Remove(callback);
+	}
+
+	void OnBoardUpdate()
+	{
+		foreach (BoardUpdateCallback callback in boardUpdateCallbacks)
+		{
+			callback();
 		}
 	}
 }

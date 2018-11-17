@@ -9,8 +9,13 @@ public class GameController2D : MonoBehaviour {
 
 	float shiftStartTime = -100;
 	public float timeToShift = 2;
-	bool shiftXFirst = false;
 	bool shifting = false;
+
+	bool intro = true;
+	float introStartTime;
+	float introTime = 3;
+	float introVRotation = 360;
+	float introHRotation = 180;
 
 	Point4 selectedTile = Point4.NONE;
 	Point4 destinationTile = Point4.NONE;
@@ -18,7 +23,8 @@ public class GameController2D : MonoBehaviour {
 
 	ChessboardAttackerHelper attackers;
 
-	ChessBoard board;
+	[HideInInspector]
+	public ChessBoard board;
 
 	ChessboardController2D[] chessboardControllers;
 
@@ -34,6 +40,8 @@ public class GameController2D : MonoBehaviour {
 
 		attackers = new ChessboardAttackerHelper(board);
 		attackers.ComputeAttackers();
+
+		introStartTime = Time.time;
 	}
 	
 	void StartShift()
@@ -46,19 +54,19 @@ public class GameController2D : MonoBehaviour {
 	{
 		if (vector == Vector3.up)
 		{
-			return (Vector3.up + Vector3.forward * 0.4f).normalized;
+			return (Vector3.up + Vector3.forward * 0.3f).normalized;
 		}
 		if (vector == Vector3.down)
 		{
-			return (Vector3.down + Vector3.forward * 0.4f).normalized;
+			return (Vector3.down + Vector3.forward * 0.3f).normalized;
 		}
 		if (vector == Vector3.right)
 		{
-			return (Vector3.right + Vector3.forward * 0.4f).normalized;
+			return (Vector3.right + Vector3.forward * 0.3f).normalized;
 		}
 		if (vector == Vector3.left)
 		{
-			return (Vector3.left + Vector3.forward * 0.4f).normalized;
+			return (Vector3.left + Vector3.forward * 0.3f).normalized;
 		}
 		else
 		{
@@ -173,6 +181,119 @@ public class GameController2D : MonoBehaviour {
 		}
 	}
 
+	public void TryRightTurn()
+	{
+		if (!shifting && !intro)
+		{
+			oldViewVector = viewVector;
+			if (viewVector == Vector3.forward)
+			{
+				viewVector = Vector3.left;
+			}
+			else if (viewVector == Vector3.left)
+			{
+				viewVector = Vector3.back;
+			}
+			else if (viewVector == Vector3.back)
+			{
+				viewVector = Vector3.right;
+			}
+			else if (viewVector == Vector3.right)
+			{
+				viewVector = Vector3.forward;
+			}
+			else if (viewVector == Vector3.up)
+			{
+				viewVector = Vector3.left;
+			}
+			else if (viewVector == Vector3.down)
+			{
+				viewVector = Vector3.left;
+			}
+			StartShift();
+		}
+	}
+
+	public void TryLeftTurn()
+	{
+		if (!shifting && !intro)
+		{
+			oldViewVector = viewVector;
+			if (viewVector == Vector3.forward)
+			{
+				viewVector = Vector3.right;
+			}
+			else if (viewVector == Vector3.right)
+			{
+				viewVector = Vector3.back;
+			}
+			else if (viewVector == Vector3.back)
+			{
+				viewVector = Vector3.left;
+			}
+			else if (viewVector == Vector3.left)
+			{
+				viewVector = Vector3.forward;
+			}
+			else if (viewVector == Vector3.up)
+			{
+				viewVector = Vector3.right;
+			}
+			else if (viewVector == Vector3.down)
+			{
+				viewVector = Vector3.right;
+			}
+			StartShift();
+		}
+	}
+
+	public void TryUpTurn()
+	{
+		if (!shifting && !intro)
+		{
+			oldViewVector = viewVector;
+			if (viewVector == Vector3.up)
+			{
+				viewVector = Vector3.forward;
+			}
+			else if (viewVector == Vector3.down)
+			{
+				viewVector = Vector3.back;
+			}
+			else 
+			{
+				viewVector = Vector3.down;
+			}
+			StartShift();
+		}
+	}
+
+	public void TryDownTurn()
+	{
+		if (!shifting && !intro)
+		{
+			oldViewVector = viewVector;
+			if (viewVector == Vector3.up)
+			{
+				viewVector = Vector3.back;
+			}
+			else if (viewVector == Vector3.down)
+			{
+				viewVector = Vector3.forward;
+			}
+			else 
+			{
+				viewVector = Vector3.up;
+			}
+			StartShift();
+		}
+	}
+
+	public void Undo()
+	{
+		board.Undo();
+	}
+
 	// Update is called once per frame
 	void Update () 
 	{
@@ -273,100 +394,24 @@ public class GameController2D : MonoBehaviour {
 			}
 		}
 
-		if (!shifting && Input.GetKeyDown(KeyCode.RightArrow))
+		/*if (Input.GetKeyDown(KeyCode.RightArrow))
 		{
-			oldViewVector = viewVector;
-			if (viewVector == Vector3.forward)
-			{
-				viewVector = Vector3.left;
-			}
-			else if (viewVector == Vector3.left)
-			{
-				viewVector = Vector3.back;
-			}
-			else if (viewVector == Vector3.back)
-			{
-				viewVector = Vector3.right;
-			}
-			else if (viewVector == Vector3.right)
-			{
-				viewVector = Vector3.forward;
-			}
-			else if (viewVector == Vector3.up)
-			{
-				viewVector = Vector3.left;
-			}
-			else if (viewVector == Vector3.down)
-			{
-				viewVector = Vector3.left;
-			}
-			StartShift();
+			TryRightTurn();
 		}
-
-		if (!shifting && Input.GetKeyDown(KeyCode.LeftArrow))
+		
+		if (Input.GetKeyDown(KeyCode.LeftArrow))
 		{
-			oldViewVector = viewVector;
-			if (viewVector == Vector3.forward)
-			{
-				viewVector = Vector3.right;
-			}
-			else if (viewVector == Vector3.right)
-			{
-				viewVector = Vector3.back;
-			}
-			else if (viewVector == Vector3.back)
-			{
-				viewVector = Vector3.left;
-			}
-			else if (viewVector == Vector3.left)
-			{
-				viewVector = Vector3.forward;
-			}
-			else if (viewVector == Vector3.up)
-			{
-				viewVector = Vector3.right;
-			}
-			else if (viewVector == Vector3.down)
-			{
-				viewVector = Vector3.right;
-			}
-			StartShift();
+			TryLeftTurn();
 		}
-
-		if (!shifting && Input.GetKeyDown(KeyCode.UpArrow))
+		
+		if (Input.GetKeyDown(KeyCode.UpArrow))
 		{
-			oldViewVector = viewVector;
-			if (viewVector == Vector3.up)
-			{
-				viewVector = Vector3.forward;
-			}
-			else if (viewVector == Vector3.down)
-			{
-				viewVector = Vector3.back;
-			}
-			else 
-			{
-				viewVector = Vector3.down;
-			}
-			StartShift();
+			TryUpTurn();
 		}
-
-		if (!shifting && Input.GetKeyDown(KeyCode.DownArrow))
+		
+		if (Input.GetKeyDown(KeyCode.DownArrow))
 		{
-			oldViewVector = viewVector;
-			if (viewVector == Vector3.up)
-			{
-				viewVector = Vector3.back;
-			}
-			else if (viewVector == Vector3.down)
-			{
-				viewVector = Vector3.forward;
-			}
-			else 
-			{
-				viewVector = Vector3.up;
-			}
-			StartShift();
+			TryDownTurn();
 		}
 
 		if (Input.GetKeyDown(KeyCode.Space))
@@ -379,15 +424,30 @@ public class GameController2D : MonoBehaviour {
 
 		if (Input.GetKeyDown(KeyCode.Backspace))
 		{
-			board.Undo();
-		}
+			Undo();
+		}*/
 	}
 
 	void FixedUpdate ()
 	{
 		Quaternion cameraRotation = Quaternion.LookRotation(ViewVectorToView(viewVector));
 		float distance = -30;
-		if (shifting)
+
+		if (intro)
+		{
+			float shiftPercentage = (Time.time - introStartTime) / introTime;
+			float vAngle = introVRotation - introVRotation * shiftPercentage;
+			float hAngle = introHRotation - introHRotation * shiftPercentage;
+			if (shiftPercentage >= 1)
+			{
+				shiftPercentage = 1;
+				intro = false;
+			}
+
+			cameraRotation = Quaternion.AngleAxis(vAngle, Vector3.back) * Quaternion.AngleAxis(hAngle, Vector3.up) * cameraRotation;
+			distance = -30 - (1- shiftPercentage) * 150;
+		}
+		else if (shifting)
 		{
 			float shiftPercentage = (Time.time - shiftStartTime) / timeToShift;
 			if (shiftPercentage >= 1)
@@ -395,43 +455,12 @@ public class GameController2D : MonoBehaviour {
 				shiftPercentage = 1;
 				shifting = false;
 			}
-			float stage1Lerp = Mathf.Clamp01(1 - (shiftPercentage-0.5f)*2);
-			float stage2Lerp = Mathf.Clamp01(shiftPercentage*2);
 
 			cameraRotation = Quaternion.Lerp(Quaternion.LookRotation(ViewVectorToView(oldViewVector)), Quaternion.LookRotation(ViewVectorToView(viewVector)), shiftPercentage);
 			distance = -30 - Mathf.Sin(shiftPercentage*Mathf.PI) * 20;
 		}
 
 		Camera.main.transform.rotation = cameraRotation;
-		Camera.main.transform.position = Camera.main.transform.forward * distance;
-
-		/*Vector3 centerPoint = new Vector3(0,0,0);
-		if (Input.GetKey(KeyCode.RightArrow))
-		{
-			Camera.main.transform.RotateAround(centerPoint, Vector3.up, Time.deltaTime * 300);
-		}
-
-		if (Input.GetKey(KeyCode.LeftArrow))
-		{
-			Camera.main.transform.RotateAround(centerPoint, Vector3.up, -Time.deltaTime * 300);
-		}
-		
-		if (Input.GetKey(KeyCode.UpArrow))
-		{
-			Camera.main.transform.RotateAround(centerPoint, Vector3.right, -Time.deltaTime * 100);
-		}
-		if (Input.GetKey(KeyCode.DownArrow))
-		{
-			Camera.main.transform.RotateAround(centerPoint, Vector3.right, -Time.deltaTime * 100);
-		}*/
-
-		/*if (Input.GetKey(KeyCode.UpArrow))
-		{
-			Camera.main.transform.position += (centerPoint -Camera.main.transform.position).normalized * 60 * Time.fixedDeltaTime;
-		}
-		if (Input.GetKey(KeyCode.DownArrow))
-		{
-			Camera.main.transform.position += (Camera.main.transform.position - centerPoint).normalized * 60 * Time.fixedDeltaTime;
-		}*/
+		Camera.main.transform.position = Camera.main.transform.forward * distance + Camera.main.transform.right * -5;
 	}
 }

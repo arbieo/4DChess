@@ -6,5 +6,5 @@ public class ChessVariantOptions
     public ChessPiece.Type autoPromoteType = ChessPiece.Type.QUEEN;*/
 
     public bool kingCanMoveW = false;
-    public bool kingCanMoveY = true;
+    public bool kingCanMoveY = false;
 }

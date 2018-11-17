@@ -25,7 +25,6 @@ public class ChessboardController2D : MonoBehaviour {
 	/*
 	TODO: these should be controlled from outside
 	 */
-	ChessPiece.Team currentMove = ChessPiece.Team.WHITE;
 	Tile2D selectedTile;
 	Tile2D destinationTile;
 	Tile2D attackedTile;
