@@ -12,6 +12,19 @@ public class ChessboardAttackerHelper
         this.board = board;
 
         attackers = new List<ChessPiece>[board.size.x, board.size.y, board.size.z, board.size.w];
+		for(int x = 0; x<board.size.x; x++)
+		{
+			for(int y = 0; y<board.size.y; y++)
+			{
+				for(int z = 0; z<board.size.z; z++)
+				{
+					for(int w = 0; w<board.size.w; w++)
+					{
+						attackers[x,y,z,w] = new List<ChessPiece>();
+					}
+				}
+			}
+		}
         ComputeAttackers();
     }
 
@@ -25,7 +38,7 @@ public class ChessboardAttackerHelper
 				{
 					for(int w = 0; w<board.size.w; w++)
 					{
-						attackers[x,y,z,w] = new List<ChessPiece>();
+						attackers[x,y,z,w].Clear();
 					}
 				}
 			}

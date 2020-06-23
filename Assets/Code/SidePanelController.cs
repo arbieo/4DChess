@@ -8,7 +8,7 @@ public class SidePanelController : MonoBehaviour {
 	public Image whitePlayerIcon;
 	public Text whitePlayerName;
 	public Image blackPlayerIcon;
-	public Text blackPlayerText;
+	public Text blackPlayerName;
 
 	public Image blackQueenCaptures;
 	public Text blackQueenCaptureAmount;
@@ -120,6 +120,30 @@ public class SidePanelController : MonoBehaviour {
 		UpdateCaptures(whiteRookCaptures, whiteRookCaptureAmount, whiteRookCount);
 		UpdateCaptures(whitePawnCaptures, whitePawnCaptureAmount, whitePawnCount);
 		
+		if (gameController.board.currentMove == ChessPiece.Team.WHITE)
+		{
+			whitePlayerIcon.color = Color.white;
+			blackPlayerIcon.color = new Color(1,1,1,0.25f);
+		}
+		else
+		{
+			blackPlayerIcon.color = Color.white;
+			whitePlayerIcon.color = new Color(1,1,1,0.25f);
+		}
+
+		string thinkingText = gameController.board.currentMove == gameController.playerColor ? "" : " (thinking..)";
+
+		if (gameController.playerColor == ChessPiece.Team.WHITE)
+		{
+			whitePlayerName.text = "Player";
+			blackPlayerName.text = "AI" + thinkingText;
+		}
+		else
+		{
+			whitePlayerName.text = "AI" + thinkingText;
+			blackPlayerName.text = "Player";
+		}
+
 	}
 
 	public void UpdateCaptures(Image icon, Text captureAmount, int count)
@@ -157,7 +181,7 @@ public class SidePanelController : MonoBehaviour {
 
 	public void Undo()
 	{
-		gameController.Undo();
-		undoCount ++;
+		bool didUndo = gameController.Undo();
+		if (didUndo) undoCount ++;
 	}
 }

@@ -26,6 +26,8 @@ public class Tile2D : MonoBehaviour {
 	public Color highlightedTileColor;
 	public Color selectedTileColor;
 	public Color attackedTileColor;
+	public Color movedTileColor;
+	public Color checkTileColor;
 
 	public SpriteRenderer tileRenderer;
 	public SpriteRenderer pieceRenderer;
@@ -33,6 +35,9 @@ public class Tile2D : MonoBehaviour {
 
 	public bool highlighted;
 	public bool selected;
+	public bool attacked;
+	public bool moved;
+	public bool check;
 
 	public void Initialize(Point4 position, ChessBoard board)
 	{
@@ -55,10 +60,31 @@ public class Tile2D : MonoBehaviour {
 		UpdatePiece();
 	}
 
+	public void Attacked()
+	{
+		attacked = true;
+		UpdatePiece();
+	}
+
+	public void Moved()
+	{
+		moved = true;
+		UpdatePiece();
+	}
+
+	public void Check()
+	{
+		check = true;
+		UpdatePiece();
+	}
+
 	public void ClearSelection()
 	{
 		highlighted = false;
 		selected = false;
+		attacked = false;
+		moved = false;
+		check = false;
 		UpdatePiece();
 	}
 
@@ -89,13 +115,26 @@ public class Tile2D : MonoBehaviour {
 		}
 		pieceRenderer.sprite = pieceSprite;
 
+		
 		if (selected)
 		{
 			tileRenderer.color = selectedTileColor;
 		}
+		else if (check)
+		{
+			tileRenderer.color = checkTileColor;
+		}
+		else if (attacked)
+		{
+			tileRenderer.color = attackedTileColor;
+		}
 		else if (highlighted)
 		{
 			tileRenderer.color = highlightedTileColor;
+		}
+		else if (moved)
+		{
+			tileRenderer.color = movedTileColor;
 		}
 		else
 		{

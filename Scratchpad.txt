@@ -79,11 +79,46 @@ queen: 9
 king: 0 (loss)
 
 Score algoritm:
-Friendly attacking enemy: +0.15 * unit value (except king)
+Friendly attacking enemy: +0.15 * unit value (except king) (up to 2)
 Friendly attacking friendly: +0.15 friendly value (except king)
 
-Friendly attacking king: +10
+Friendly attacking king: +2
 
 Pawn advanced forward: +0.15 * pawn value 
 Unit on sides of board -0.15 * unit value
 Spaces beside king that are attacked: -1 points
+
+
+UI needs:
+
+You
+opponent
+time?
+
+current turn
+
+Undo button
+undo counter
+
+pieces taken
+
+show move as 2d
+
+
+At first, there was 1 dimension
+
+and there was peace
+
+And then there were 2 dimensions
+
+But You already know the story of this war
+
+The world split into 3 dimensions
+
+and there was carnage
+
+Before us stands the 4th dimension of chess
+
+We need your help
+
+Enter into the hypercube

@@ -22,12 +22,7 @@ public class ChessboardController2D : MonoBehaviour {
 	public Text zText;
 	public Text wText;
 
-	/*
-	TODO: these should be controlled from outside
-	 */
-	Tile2D selectedTile;
-	Tile2D destinationTile;
-	Tile2D attackedTile;
+	public bool firstStart = true;
 
 	public void Initialize(ChessBoard board)
 	{
@@ -77,7 +72,10 @@ public class ChessboardController2D : MonoBehaviour {
 
 		transform.parent.rotation = Quaternion.LookRotation(transform.parent.forward);
 
-		tiles = new Tile2D[board.size.x, board.size.y, board.size.z, board.size.w];
+		if (firstStart == true)
+		{
+			tiles = new Tile2D[board.size.x, board.size.y, board.size.z, board.size.w];
+		}
 		for(int x = 0; x<board.size.x; x++)
 		{
 			for(int y = 0; y<board.size.y; y++)
@@ -86,7 +84,10 @@ public class ChessboardController2D : MonoBehaviour {
 				{
 					for(int w = 0; w<board.size.w; w++)
 					{
-						tiles[x,y,z,w] = GameObject.Instantiate(tilePrefab).GetComponent<Tile2D>();
+						if (firstStart == true)
+						{
+							tiles[x,y,z,w] = GameObject.Instantiate(tilePrefab).GetComponent<Tile2D>();
+						}
 						Point4 position = new Point4(x,y,z,w);
 						tiles[x,y,z,w].Initialize(position, board);
 						tiles[x,y,z,w].transform.parent = tileContainer.transform;
@@ -101,6 +102,7 @@ public class ChessboardController2D : MonoBehaviour {
 				}
 			}
 		}
+		firstStart = false;
 	}
 
 	public Tile2D GetTile(Point4 position)

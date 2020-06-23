@@ -89,219 +89,277 @@ public class ChessPiece
         return (ChessPiece)this.MemberwiseClone();
     }
 
-    public bool isMovableSquare(int x, int y, int z, int w, bool includeFriendlyAttacks)
+    public IEnumerable<Point4> GetValidMoves(bool allAttacks = false)
     {
-        return isInBounds(x, y, z, w) && (includeFriendlyAttacks || !isFriendlyPiece(x, y, z, w));
+        return new ValidMoves(this, allAttacks);
     }
 
-    public bool isInBounds(int x, int y, int z, int w)
+    public bool IsValidMove(Point4 position)
     {
-        return x >= 0 && x <= 3 && y >=0 && y<=3 && z >=0 && z <= 3 && w >= 0 && w<=3;
-    }
-
-    public bool isEnemyPiece(int x, int y, int z, int w)
-    {
-        return isInBounds(x, y, z, w) && board.pieces[x,y,z,w] != null && board.pieces[x,y,z,w].team != team;
-    }
-
-    public bool isFriendlyPiece(int x, int y, int z, int w)
-    {
-        return isInBounds(x, y, z, w) && board.pieces[x,y,z,w] != null && board.pieces[x,y,z,w].team == team;
-    }
-
-    HashSet<Point4> GetDiagonals(int range, bool includeFriendlyAttacks)
-    {
-        HashSet<Point4> validMoves = new HashSet<Point4>();
-
-        for (int dir1 = 0; dir1<8; dir1++)
+        foreach(Point4 move in GetValidMoves())
         {
-            for (int dir2 = dir1+1; dir2<8; dir2++)
-            {
-                if ((dir1 == 0 && dir2 == 4) || (dir1 == 4 && dir2 == 0)) continue;
-                if ((dir1 == 1 && dir2 == 5) || (dir1 == 5 && dir2 == 1)) continue;
-                if ((dir1 == 2 && dir2 == 6) || (dir1 == 6 && dir2 == 2)) continue;
-                if ((dir1 == 3 && dir2 == 7) || (dir1 == 7 && dir2 == 3)) continue;
+            if (move == position) return true;
+        }
+        return false;
+    }
 
-                for (int i = 1; i<=range; i++)
+    class ValidMoves : IEnumerable<Point4>
+    {
+        bool allAttacks = false;
+        ChessPiece piece;
+
+        static Point4 up = new Point4(0, 1, 0, 0);
+        static Point4 right = new Point4(1, 0, 0, 0);
+        static Point4 forward = new Point4(0, 0, 1, 0);
+        static Point4 forward4D = new Point4(0, 0, 0, 1);
+
+        static Point4[] directions = new Point4[8];
+
+        public ValidMoves(ChessPiece piece, bool allAttacks = false)
+        {
+            this.piece = piece;
+            this.allAttacks = allAttacks;
+
+            if (piece.team == Team.WHITE)
+            {
+                forward = new Point4(0, 0, 1, 0);
+                forward4D = new Point4(0, 0, 0, 1);
+            }
+            else
+            {
+                forward = new Point4(0, 0, -1, 0);
+                forward4D = new Point4(0, 0, 0, -1);
+            }
+
+            directions[0] = right;
+            directions[1] = up;
+            directions[2] = forward;
+            directions[3] = forward4D;
+            directions[4] = right * -1;
+            directions[5] = up * -1;
+            directions[6] = forward * -1;
+            directions[7] = forward4D * -1;
+        }
+
+        public bool isMovableSquare(Point4 pos, bool includeFriendlyAttacks)
+        {
+            return isInBounds(pos) && (includeFriendlyAttacks || !isFriendlyPiece(pos));
+        }
+
+        public bool isInBounds(Point4 pos)
+        {
+            ChessBoard board = piece.board;
+            return pos.x >= 0 && pos.x <= board.size.x-1 && pos.y >=0 && pos.y<=board.size.y-1 
+                && pos.z >=0 && pos.z <= board.size.z-1 && pos.w >= 0 && pos.w<=board.size.w-1;
+        }
+
+        public bool isEnemyPiece(Point4 pos)
+        {
+            return isInBounds(pos) && piece.board.GetPiece(pos) != null && piece.board.GetPiece(pos).team != piece.team;
+        }
+
+        public bool isFriendlyPiece(Point4 pos)
+        {
+            return isInBounds(pos) && piece.board.GetPiece(pos) != null && piece.board.GetPiece(pos).team == piece.team;
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            // Invoke IEnumerator<string> GetEnumerator() above.
+            return GetEnumerator();
+        }
+
+        public IEnumerator<Point4> GetEnumerator(){
+            Point4 currentPosition = piece.currentPosition;
+            Point4 scratchPoint;
+
+            if (piece.type == Type.PAWN) {
+
+                if (allAttacks)
                 {   
-                    int newX = x + (dir1 == 0 || dir2 == 0 ? i : 0) - (dir1 == 4 || dir2 == 4 ? i : 0);
-                    int newY = y + (dir1 == 1 || dir2 == 1 ? i : 0) - (dir1 == 5 || dir2 == 5 ? i : 0);
-                    int newZ = z + (dir1 == 2 || dir2 == 2 ? i : 0) - (dir1 == 6 || dir2 == 6 ? i : 0);
-                    int newW = w + (dir1 == 3 || dir2 == 3 ? i : 0) - (dir1 == 7 || dir2 == 7 ? i : 0);
+                    scratchPoint = currentPosition + right + forward;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition + up + forward;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - right + forward;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - up + forward;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
 
-                    if (isMovableSquare(newX, newY, newZ, newW, includeFriendlyAttacks))  validMoves.Add(new Point4(newX, newY, newZ, newW));
-                    if (!isInBounds(newX, newY, newZ, newW) || isFriendlyPiece(newX, newY, newZ, newW) || isEnemyPiece(newX, newY, newZ, newW)) break;
+                    scratchPoint = currentPosition + right + forward4D;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition + up + forward4D;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - right + forward4D;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - up + forward4D;
+                    if (isInBounds(scratchPoint)) yield return scratchPoint;
                 }
-            }
-        }
-
-        return validMoves;
-    }
-
-    HashSet<Point4> GetOrthoginals(int range, bool includeFriendlyAttacks)
-    {
-        HashSet<Point4> validMoves = new HashSet<Point4>();
-
-
-        for (int dir = 0; dir<8; dir++)
-        {
-            for (int i = 1; i<=range; i++)
-            {
-                int newX = x + (dir == 0 ? i : 0) - (dir == 4 ? i : 0);
-                int newY = y + (dir == 1 ? i : 0) - (dir == 5 ? i : 0);
-                int newZ = z + (dir == 2 ? i : 0) - (dir == 6 ? i : 0);
-                int newW = w + (dir == 3 ? i : 0) - (dir == 7 ? i : 0);
-
-                if (isMovableSquare(newX, newY, newZ, newW, includeFriendlyAttacks)) validMoves.Add(new Point4(newX, newY, newZ, newW));
-                if (!isInBounds(newX, newY, newZ, newW) || isFriendlyPiece(newX, newY, newZ, newW) || isEnemyPiece(newX, newY, newZ, newW)) break;
-            }
-        }
-
-        return validMoves;
-    }
-
-    public HashSet<Point4> GetValidMoves(bool allAttacks = false)
-    {
-        HashSet<Point4> validMoves = new HashSet<Point4>();
-
-        if (type == Type.PAWN) {
-            int forward;
-            if (team == Team.WHITE)
-            {
-                forward = 1;
-            }
-            else
-            {
-                forward = -1;
-            }
-
-            //Fucking en passant
-            /*if (board. lastMovedPiece != null && board.lastMovedPiece.type == ChessPiece.Type.PAWN && board.lastMovedPieceLocation == board.lastMovedPiece.startPosition && 
-			    (newPosition == board.lastMovedPiece.currentPosition - board.lastMovedPiece.forwardW || newPosition == board.lastMovedPiece.currentPosition - board.lastMovedPiece.forwardZ))
-            {
-                //En passant kill
-                //Fuuck i need listeners to update this shit
-                validMoves.Add(newPosition);
-            }*/
-
-            if (allAttacks)
-            {   
-                if (isInBounds(x+1, y, z+forward, w)) validMoves.Add(new Point4(x+1, y, z+forward, w));
-                if (isInBounds(x, y+1, z+forward, w)) validMoves.Add(new Point4(x, y+1, z+forward, w));
-                if (isInBounds(x-1, y, z+forward, w)) validMoves.Add(new Point4(x-1, y, z+forward, w));
-                if (isInBounds(x, y-1, z+forward, w)) validMoves.Add(new Point4(x, y-1, z+forward, w));
-
-                if (isInBounds(x+1, y, z, w+forward)) validMoves.Add(new Point4(x+1, y, z, w+forward));
-                if (isInBounds(x, y+1, z, w+forward)) validMoves.Add(new Point4(x, y+1, z, w+forward));
-                if (isInBounds(x-1, y, z, w+forward)) validMoves.Add(new Point4(x-1, y, z, w+forward));
-                if (isInBounds(x, y-1, z, w+forward)) validMoves.Add(new Point4(x, y-1, z, w+forward));
-            }
-            else
-            {
-                if (isMovableSquare(x, y, z+forward, w, false) && !isEnemyPiece(x, y, z+forward, w) && !isFriendlyPiece(x, y, z+forward, w)) 
+                else
                 {
-                    validMoves.Add(new Point4(x, y, z+forward, w));
-                    if (board.options.allowPawnDoubleMove && currentPosition == startPosition && isMovableSquare(x, y, z+forward*2, w, false) && !isEnemyPiece(x, y, z+forward*2, w) && !isFriendlyPiece(x, y, z+forward*2, w))
+                    scratchPoint = currentPosition + forward;
+                    if (isMovableSquare(scratchPoint, false) && !isEnemyPiece(scratchPoint) && !isFriendlyPiece(scratchPoint)) 
                     {
-                        validMoves.Add(new Point4(x, y, z+forward*2, w));
+                        yield return scratchPoint;
+                        if (piece.board.options.allowPawnDoubleMove && currentPosition == piece.startPosition)
+                        {
+                            scratchPoint = currentPosition + forward*2;
+                            if(isMovableSquare(scratchPoint, false) && !isEnemyPiece(scratchPoint) && !isFriendlyPiece(scratchPoint))
+                            {
+                                yield return scratchPoint;
+                            }
+                        }
                     }
-                }
-                if (isMovableSquare(x, y, z, w+forward, false) && !isEnemyPiece(x, y, z, w+forward) && !isFriendlyPiece(x, y, z, w+forward))
-                {
-                    validMoves.Add(new Point4(x, y, z, w+forward));
-                    if (board.options.allowPawnDoubleMove && currentPosition == startPosition && isMovableSquare(x, y, z, w+forward*2, false) && !isEnemyPiece(x, y, z, w+forward) && !isFriendlyPiece(x, y, z, w+forward))
+                    scratchPoint = currentPosition + forward4D;
+                    if (isMovableSquare(scratchPoint, false) && !isEnemyPiece(scratchPoint) && !isFriendlyPiece(scratchPoint)) 
                     {
-                        validMoves.Add(new Point4(x, y, z, w+forward*2));
+                        yield return scratchPoint;
+                        if (piece.board.options.allowPawnDoubleMove && currentPosition == piece.startPosition)
+                        {
+                            scratchPoint = currentPosition + forward4D*2;
+                            if(isMovableSquare(scratchPoint, false) && !isEnemyPiece(scratchPoint) && !isFriendlyPiece(scratchPoint))
+                            {
+                                yield return scratchPoint;
+                            }
+                        }
                     }
-                } 
 
-                if (isEnemyPiece(x+1, y, z+forward, w)) validMoves.Add(new Point4(x+1, y, z+forward, w));
-                if (isEnemyPiece(x, y+1, z+forward, w)) validMoves.Add(new Point4(x, y+1, z+forward, w));
-                if (isEnemyPiece(x-1, y, z+forward, w)) validMoves.Add(new Point4(x-1, y, z+forward, w));
-                if (isEnemyPiece(x, y-1, z+forward, w)) validMoves.Add(new Point4(x, y-1, z+forward, w));
+                    scratchPoint = currentPosition + right + forward;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition + up + forward;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - right + forward;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - up + forward;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
 
-                if (isEnemyPiece(x+1, y, z, w+forward)) validMoves.Add(new Point4(x+1, y, z, w+forward));
-                if (isEnemyPiece(x, y+1, z, w+forward)) validMoves.Add(new Point4(x, y+1, z, w+forward));
-                if (isEnemyPiece(x-1, y, z, w+forward)) validMoves.Add(new Point4(x-1, y, z, w+forward));
-                if (isEnemyPiece(x, y-1, z, w+forward)) validMoves.Add(new Point4(x, y-1, z, w+forward));
-            }
-
-            
-        }
-        else if (type == Type.KING)
-        {
-            for (int dir1 = 0; dir1<8; dir1++)
-            {
-                if (!board.options.kingCanMoveW && (dir1 == 3 || dir1 == 7)) continue;
-                if (!board.options.kingCanMoveY && (dir1 == 1 || dir1 == 5)) continue;
-
-                {
-                    int newX = x + (dir1 == 0 ? 1 : 0) - (dir1 == 4 ? 1 : 0);
-                    int newY = y + (dir1 == 1 ? 1 : 0) - (dir1 == 5 ? 1 : 0);
-                    int newZ = z + (dir1 == 2 ? 1 : 0) - (dir1 == 6 ? 1 : 0);
-                    int newW = w + (dir1 == 3 ? 1 : 0) - (dir1 == 7 ? 1 : 0);
-
-                    if (isMovableSquare(newX, newY, newZ, newW, allAttacks)) validMoves.Add(new Point4(newX, newY, newZ, newW));
+                    scratchPoint = currentPosition + right + forward4D;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition + up + forward4D;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - right + forward4D;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
+                    scratchPoint = currentPosition - up + forward4D;
+                    if (isEnemyPiece(scratchPoint)) yield return scratchPoint;
                 }
 
-                for (int dir2 = 0; dir2<8; dir2++)
-                {
-                    if (dir1 == dir2) continue;
-                    if (!board.options.kingCanMoveW && (dir2 == 3 || dir2 == 7)) continue;
-                    if (!board.options.kingCanMoveY && (dir2 == 1 || dir2 == 5)) continue;
-
-                    if ((dir1 == 0 && dir2 == 4) || (dir1 == 4 && dir2 == 0)) continue;
-                    if ((dir1 == 1 && dir2 == 5) || (dir1 == 5 && dir2 == 1)) continue;
-                    if ((dir1 == 2 && dir2 == 6) || (dir1 == 6 && dir2 == 2)) continue;
-                    if ((dir1 == 3 && dir2 == 7) || (dir1 == 7 && dir2 == 3)) continue;
-
-                    int newX = x + (dir1 == 0 || dir2 == 0 ? 1 : 0) - (dir1 == 4 || dir2 == 4 ? 1 : 0);
-                    int newY = y + (dir1 == 1 || dir2 == 1 ? 1 : 0) - (dir1 == 5 || dir2 == 5 ? 1 : 0);
-                    int newZ = z + (dir1 == 2 || dir2 == 2 ? 1 : 0) - (dir1 == 6 || dir2 == 6 ? 1 : 0);
-                    int newW = w + (dir1 == 3 || dir2 == 3 ? 1 : 0) - (dir1 == 7 || dir2 == 7 ? 1 : 0);
-
-                    if (isMovableSquare(newX, newY, newZ, newW, allAttacks))  validMoves.Add(new Point4(newX, newY, newZ, newW));
-                }
+                
             }
-        }
-        else if (type == Type.QUEEN)
-        {
-            validMoves = GetOrthoginals(board.maxBoardDimension, allAttacks);
-            validMoves.UnionWith(GetDiagonals(board.maxBoardDimension, allAttacks));
-        }
-        else if (type == Type.ROOK)
-        {
-            validMoves = GetOrthoginals(board.maxBoardDimension, allAttacks);
-        }
-        else if (type == Type.BISHOP)
-        {
-            validMoves = GetDiagonals(board.maxBoardDimension, allAttacks);
-        }
-        else if (type == Type.KNIGHT)
-        {
-            for (int dir1 = 0; dir1<8; dir1++)
+            else if (piece.type == Type.KING)
             {
-                for (int dir2 = 0; dir2<8; dir2++)
+                for (int dir1 = 0; dir1<directions.Length; dir1++)
                 {
-                    if (dir1 == dir2) continue;
-                    if ((dir1 == 0 && dir2 == 4) || (dir1 == 4 && dir2 == 0))continue;
-                    if ((dir1 == 1 && dir2 == 5) || (dir1 == 5 && dir2 == 1)) continue;
-                    if ((dir1 == 2 && dir2 == 6) || (dir1 == 6 && dir2 == 2)) continue;
-                    if ((dir1 == 3 && dir2 == 7) || (dir1 == 7 && dir2 == 3)) continue;
 
-                    int newX = x + (dir1 == 0 ? 1 : 0) - (dir1 == 4 ? 1 : 0) + (dir2 == 0 ? 2 : 0) - (dir2 == 4 ? 2 : 0);
-                    int newY = y + (dir1 == 1 ? 1 : 0) - (dir1 == 5 ? 1 : 0) + (dir2 == 1 ? 2 : 0) - (dir2 == 5 ? 2 : 0);
-                    int newZ = z + (dir1 == 2 ? 1 : 0) - (dir1 == 6 ? 1 : 0) + (dir2 == 2 ? 2 : 0) - (dir2 == 6 ? 2 : 0);
-                    int newW = w + (dir1 == 3 ? 1 : 0) - (dir1 == 7 ? 1 : 0) + (dir2 == 3 ? 2 : 0) - (dir2 == 7 ? 2 : 0);
+                    if (!piece.board.options.kingCanMoveW && (dir1 == 3 || dir1 == 7)) continue;
+                    if (!piece.board.options.kingCanMoveY && (dir1 == 1 || dir1 == 5)) continue;
 
-                    if (isMovableSquare(newX, newY, newZ, newW, allAttacks)) 
                     {
-                        validMoves.Add(new Point4(newX, newY, newZ, newW));
+                        scratchPoint = currentPosition + directions[dir1];
+                        if (isMovableSquare(scratchPoint, allAttacks)) yield return scratchPoint;
+                    }
+
+                    for (int dir2 = dir1+1; dir2<directions.Length; dir2++)
+                    {
+                        if (dir1 == dir2) continue;
+                        if (!piece.board.options.kingCanMoveW && (dir2 == 3 || dir2 == 7)) continue;
+                        if (!piece.board.options.kingCanMoveY && (dir2 == 1 || dir2 == 5)) continue;
+
+                        if ((dir1 == 0 && dir2 == 4) || (dir1 == 4 && dir2 == 0)) continue;
+                        if ((dir1 == 1 && dir2 == 5) || (dir1 == 5 && dir2 == 1)) continue;
+                        if ((dir1 == 2 && dir2 == 6) || (dir1 == 6 && dir2 == 2)) continue;
+                        if ((dir1 == 3 && dir2 == 7) || (dir1 == 7 && dir2 == 3)) continue;
+
+                        scratchPoint = currentPosition + directions[dir1] + directions[dir2];
+                        if (isMovableSquare(scratchPoint, allAttacks)) yield return scratchPoint;
                     }
                 }
             }
-        }
+            else if (piece.type == Type.QUEEN)
+            {
+                for (int dir = 0; dir<8; dir++)
+                {
+                    for (int i = 1; i<=piece.board.maxBoardDimension; i++)
+                    {
+                        scratchPoint = piece.currentPosition + directions[dir]*i;
+                        if (isMovableSquare(scratchPoint, allAttacks)) yield return scratchPoint;
+                        if (!isInBounds(scratchPoint) || isFriendlyPiece(scratchPoint) || isEnemyPiece(scratchPoint)) break;
+                    }
+                }
 
-        return validMoves;
+                for (int dir1 = 0; dir1<8; dir1++)
+                {
+                    for (int dir2 = dir1+1; dir2<8; dir2++)
+                    {
+                        if ((dir1 == 0 && dir2 == 4) || (dir1 == 4 && dir2 == 0)) continue;
+                        if ((dir1 == 1 && dir2 == 5) || (dir1 == 5 && dir2 == 1)) continue;
+                        if ((dir1 == 2 && dir2 == 6) || (dir1 == 6 && dir2 == 2)) continue;
+                        if ((dir1 == 3 && dir2 == 7) || (dir1 == 7 && dir2 == 3)) continue;
+
+                        for (int i = 1; i<=piece.board.maxBoardDimension; i++)
+                        {   
+                            scratchPoint = piece.currentPosition + directions[dir1]*i + directions[dir2]*i;
+
+                            if (isMovableSquare(scratchPoint, allAttacks))  yield return scratchPoint;
+                            if (!isInBounds(scratchPoint) || isFriendlyPiece(scratchPoint) || isEnemyPiece(scratchPoint)) break;
+                        }
+                    }
+                }
+            }
+            else if (piece.type == Type.ROOK)
+            {
+                for (int dir = 0; dir<8; dir++)
+                {
+                    for (int i = 1; i<=piece.board.maxBoardDimension; i++)
+                    {
+                        scratchPoint = piece.currentPosition + directions[dir]*i;
+                        if (isMovableSquare(scratchPoint, allAttacks)) yield return scratchPoint;
+                        if (!isInBounds(scratchPoint) || isFriendlyPiece(scratchPoint) || isEnemyPiece(scratchPoint)) break;
+                    }
+                }
+            }
+            else if (piece.type == Type.BISHOP)
+            {
+                for (int dir1 = 0; dir1<8; dir1++)
+                {
+                    for (int dir2 = dir1+1; dir2<8; dir2++)
+                    {
+                        if ((dir1 == 0 && dir2 == 4) || (dir1 == 4 && dir2 == 0)) continue;
+                        if ((dir1 == 1 && dir2 == 5) || (dir1 == 5 && dir2 == 1)) continue;
+                        if ((dir1 == 2 && dir2 == 6) || (dir1 == 6 && dir2 == 2)) continue;
+                        if ((dir1 == 3 && dir2 == 7) || (dir1 == 7 && dir2 == 3)) continue;
+
+                        for (int i = 1; i<=piece.board.maxBoardDimension; i++)
+                        {   
+                            scratchPoint = piece.currentPosition + directions[dir1]*i + directions[dir2]*i;
+
+                            if (isMovableSquare(scratchPoint, allAttacks))  yield return scratchPoint;
+                            if (!isInBounds(scratchPoint) || isFriendlyPiece(scratchPoint) || isEnemyPiece(scratchPoint)) break;
+                        }
+                    }
+                }
+            }
+            else if (piece.type == Type.KNIGHT)
+            {
+                for (int dir1 = 0; dir1<8; dir1++)
+                {
+                    for (int dir2 = 0; dir2<8; dir2++)
+                    {
+                        if (dir1 == dir2) continue;
+                        if ((dir1 == 0 && dir2 == 4) || (dir1 == 4 && dir2 == 0))continue;
+                        if ((dir1 == 1 && dir2 == 5) || (dir1 == 5 && dir2 == 1)) continue;
+                        if ((dir1 == 2 && dir2 == 6) || (dir1 == 6 && dir2 == 2)) continue;
+                        if ((dir1 == 3 && dir2 == 7) || (dir1 == 7 && dir2 == 3)) continue;
+
+                        scratchPoint = currentPosition + directions[dir1] + directions[dir2]*2;
+
+                        if (isMovableSquare(scratchPoint, allAttacks)) 
+                        {
+                            yield return scratchPoint;
+                        }
+                    }
+                }
+            }
+        }
+        
     }
 }

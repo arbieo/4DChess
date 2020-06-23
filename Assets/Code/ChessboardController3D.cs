@@ -654,7 +654,7 @@ public class ChessboardController3D : MonoBehaviour
 		else if (selectedTile != null && selectedTile.currentPiece != null && destinationTile == null)
 		{
 			if (selectedTile.currentPiece.team == board.currentMove &&
-				selectedTile.currentPiece.GetValidMoves().Contains(new Point4(tile.x, tile.y, tile.z, tile.w)))
+				selectedTile.currentPiece.IsValidMove(new Point4(tile.x, tile.y, tile.z, tile.w)))
 			{
 				destinationTile = tile;
 			}
@@ -695,8 +695,7 @@ public class ChessboardController3D : MonoBehaviour
 			selectedTile.Select();
 			if (selectedTile.currentPiece != null)
 			{
-				HashSet<Point4> moves = selectedTile.currentPiece.GetValidMoves();
-				foreach (Point4 move in moves)
+				foreach (Point4 move in selectedTile.currentPiece.GetValidMoves())
 				{
 					tiles[move.x, move.y, move.z, move.w].Highlight();
 				}

@@ -33,10 +33,19 @@ public struct Point4
     }
     public static Point4 operator +(Point4 l, Point4 r) 
     {
-        return new Point4(l.x + r.x, l.y + r.y, l.y + r.y, l.y + r.y);
+        return new Point4(l.x + r.x, l.y + r.y, l.z + r.z, l.w + r.w);
     }
     public static Point4 operator -(Point4 l, Point4 r) 
     {
-        return new Point4(l.x - r.x, l.y - r.y, l.y - r.y, l.y - r.y);
+        return new Point4(l.x - r.x, l.y - r.y, l.z - r.z, l.w - r.w);
+    }
+    public static Point4 operator *(Point4 l, int m) 
+    {
+        return new Point4(l.x*m, l.y*m, l.z*m, l.w*m);
+    }
+
+    public override string ToString()
+    {
+        return "(" + x + ", " + y + ", " + z + ", " + w +")";
     }
 }
